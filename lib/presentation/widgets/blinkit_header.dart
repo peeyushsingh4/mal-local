@@ -8,6 +8,8 @@ class BlinkitHeader extends StatefulWidget implements PreferredSizeWidget {
   final ValueChanged<String>? onSearchChanged;
   final int cartCount;
   final VoidCallback onCartTap;
+  final VoidCallback? onToggleTheme;
+  final bool isDarkMode;
 
   const BlinkitHeader({
     super.key,
@@ -16,6 +18,8 @@ class BlinkitHeader extends StatefulWidget implements PreferredSizeWidget {
     this.onSearchChanged,
     required this.cartCount,
     required this.onCartTap,
+    this.onToggleTheme,
+    this.isDarkMode = false,
   });
 
   @override
@@ -165,7 +169,7 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = widget.isDarkMode || Theme.of(context).brightness == Brightness.dark;
 
     return SafeArea(
       child: Container(
@@ -200,7 +204,7 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
 
             // Location Header Block ("Delivery in 8 minutes \n Location ▾")
             InkWell(
@@ -217,7 +221,7 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
                       style: TextStyle(
                         fontFamily: 'Sora',
                         fontWeight: FontWeight.w900,
-                        fontSize: 12.5,
+                        fontSize: 12,
                         color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
@@ -226,7 +230,7 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 140),
+                          constraints: const BoxConstraints(maxWidth: 130),
                           child: Text(
                             widget.currentNeighborhood,
                             overflow: TextOverflow.ellipsis,
@@ -245,7 +249,7 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
 
             // Search Bar Input (Center)
             if (widget.onSearchChanged != null)
@@ -262,19 +266,41 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: widget.onSearchChanged,
-                    style: const TextStyle(fontSize: 12),
-                    decoration: const InputDecoration(
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                    decoration: InputDecoration(
                       hintText: 'Search "tiffin", "tutor", "books"...',
-                      hintStyle: TextStyle(fontSize: 12, color: Colors.grey),
-                      prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey),
+                      hintStyle: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? const Color(0xFF94A3B8) : Colors.grey,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        size: 18,
+                        color: isDark ? const Color(0xFF94A3B8) : Colors.grey,
+                      ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
                 ),
               ),
 
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
+
+            // Theme Mode Toggle Button (☀️ / 🌙)
+            if (widget.onToggleTheme != null)
+              IconButton(
+                tooltip: isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme',
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  size: 20,
+                  color: isDark ? BlinkitTheme.blinkitYellow : const Color(0xFF0F172A),
+                ),
+                onPressed: widget.onToggleTheme,
+              ),
 
             // Top Right Interactive Cart / Checkout Button (Green Blinkit Badge)
             InkWell(
@@ -282,10 +308,15 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
               borderRadius: BorderRadius.circular(8),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
-                  color: widget.cartCount > 0 ? BlinkitTheme.blinkitGreen : (isDark ? BlinkitTheme.darkElevated : const Color(0xFFE2E8F0)),
+                  color: widget.cartCount > 0
+                      ? BlinkitTheme.blinkitGreen
+                      : (isDark ? BlinkitTheme.darkElevated : const Color(0xFFE2E8F0)),
                   borderRadius: BorderRadius.circular(8),
+                  border: isDark && widget.cartCount == 0
+                      ? Border.all(color: const Color(0xFF334155))
+                      : null,
                   boxShadow: widget.cartCount > 0
                       ? [BoxShadow(color: BlinkitTheme.blinkitGreen.withOpacity(0.4), blurRadius: 6, offset: const Offset(0, 2))]
                       : [],
@@ -294,17 +325,17 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
                   children: [
                     Icon(
                       Icons.shopping_cart,
-                      size: 16,
-                      color: widget.cartCount > 0 ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      size: 15,
+                      color: widget.cartCount > 0 ? Colors.white : (isDark ? Colors.white : Colors.black87),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Text(
                       widget.cartCount > 0 ? '${widget.cartCount} Cart' : '0 Cart',
                       style: TextStyle(
                         fontFamily: 'Sora',
                         fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        color: widget.cartCount > 0 ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        fontSize: 11.5,
+                        color: widget.cartCount > 0 ? Colors.white : (isDark ? Colors.white : Colors.black87),
                       ),
                     ),
                   ],

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../domain/models/booked_order.dart';
 import '../../domain/models/category.dart';
 import '../../domain/models/listing.dart';
 import '../../domain/services/local_ai_service.dart';
 import '../../domain/services/location_service.dart';
+import '../../domain/services/order_service.dart';
 import '../../repository/listing_repository.dart';
 import '../theme/blinkit_theme.dart';
 import '../widgets/blinkit_header.dart';
@@ -17,11 +19,15 @@ import 'settings_screen.dart';
 class FeedScreen extends StatefulWidget {
   final ListingRepository repository;
   final LocalAiService aiService;
+  final VoidCallback? onToggleTheme;
+  final bool isDarkMode;
 
   const FeedScreen({
     super.key,
     required this.repository,
     required this.aiService,
+    this.onToggleTheme,
+    this.isDarkMode = false,
   });
 
   @override
@@ -31,6 +37,7 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> {
   List<Listing> _allListings = [];
   List<Listing> _filteredListings = [];
+  List<BookedOrder> _myBookedOrders = [];
   bool _isLoading = true;
 
   String _userLocation = 'Current Location';
@@ -56,6 +63,12 @@ class _FeedScreenState extends State<FeedScreen> {
       if (mounted) setState(() => _userLocation = savedLoc);
     }
     _loadListings();
+    _loadBookedOrders();
+  }
+
+  Future<void> _loadBookedOrders() async {
+    final orders = await OrderService.getBookedOrders();
+    if (mounted) setState(() => _myBookedOrders = orders);
   }
 
   Future<void> _loadListings() async {
@@ -146,6 +159,7 @@ class _FeedScreenState extends State<FeedScreen> {
         },
         onOrderConfirmed: () {
           _loadListings();
+          _loadBookedOrders();
         },
       ),
     );
@@ -153,7 +167,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = widget.isDarkMode;
     final screenWidth = MediaQuery.of(context).size.width;
 
     final crossAxisCount = screenWidth > 1100
@@ -171,6 +185,8 @@ class _FeedScreenState extends State<FeedScreen> {
         currentNeighborhood: _userLocation,
         cartCount: _cartListingIds.length,
         onCartTap: _openCheckoutModal,
+        onToggleTheme: widget.onToggleTheme,
+        isDarkMode: widget.isDarkMode,
         onSearchChanged: (val) {
           _searchQuery = val;
           _applyFilters();
@@ -191,7 +207,10 @@ class _FeedScreenState extends State<FeedScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: BlinkitTheme.blinkitGreen))
           : RefreshIndicator(
-              onRefresh: _loadListings,
+              onRefresh: () async {
+                await _loadListings();
+                await _loadBookedOrders();
+              },
               color: BlinkitTheme.blinkitGreen,
               child: CustomScrollView(
                 slivers: [
@@ -207,36 +226,27 @@ class _FeedScreenState extends State<FeedScreen> {
                           const SizedBox(width: 8),
                           _buildTypeChip('📥 Requests', ListingType.request),
                           const Spacer(),
-                          // Neighborhood Pulse Analytics
+                          // Neighborhood Pulse Analytics with Smooth Page Transition
                           IconButton(
                             tooltip: 'Neighborhood Activity Pulse',
                             icon: const Icon(Icons.show_chart, color: BlinkitTheme.blinkitGreen),
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PulseScreen(
-                                    repository: widget.repository,
-                                    aiService: widget.aiService,
-                                  ),
-                                ),
-                              );
+                              context.pushSmooth(PulseScreen(
+                                repository: widget.repository,
+                                aiService: widget.aiService,
+                              ));
                             },
                           ),
-                          // Settings
+                          // Settings with Smooth Page Transition
                           IconButton(
                             icon: const Icon(Icons.settings, size: 20),
                             onPressed: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => SettingsScreen(
-                                    repository: widget.repository,
-                                    aiService: widget.aiService,
-                                  ),
-                                ),
-                              );
+                              await context.pushSmooth(SettingsScreen(
+                                repository: widget.repository,
+                                aiService: widget.aiService,
+                              ));
                               _loadListings();
+                              _loadBookedOrders();
                             },
                           ),
                         ],
@@ -255,9 +265,102 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   ),
 
+                  // Active Booked Orders Section (Display after checkout!)
+                  if (_myBookedOrders.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: BlinkitTheme.blinkitGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.2),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.inventory_2_outlined, color: BlinkitTheme.blinkitGreen, size: 20),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        '📦 My Active Service Orders',
+                                        style: TextStyle(
+                                          fontFamily: 'Sora',
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 14,
+                                          color: BlinkitTheme.blinkitGreen,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '${_myBookedOrders.length} Order(s)',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              ..._myBookedOrders.take(3).map((order) {
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? BlinkitTheme.darkCardBg : Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              order.serviceTitles.join(', '),
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              'Ref: ${order.bookingRef} • Slot: ${order.timeSlot}',
+                                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: BlinkitTheme.blinkitGreen.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Text(
+                                          'Confirmed',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w900,
+                                            color: BlinkitTheme.blinkitGreen,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
                   const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-                  // Category Section Header (Wrapped with Expanded to prevent text overflow)
+                  // Category Section Header
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -337,16 +440,11 @@ class _FeedScreenState extends State<FeedScreen> {
                                   isAdded: isAdded,
                                   onAddTap: () => _toggleCart(listing),
                                   onTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => DetailsScreen(
-                                          listingId: listing.id,
-                                          repository: widget.repository,
-                                          aiService: widget.aiService,
-                                        ),
-                                      ),
-                                    );
+                                    await context.pushSmooth(DetailsScreen(
+                                      listingId: listing.id,
+                                      repository: widget.repository,
+                                      aiService: widget.aiService,
+                                    ));
                                     _loadListings();
                                   },
                                 );
@@ -361,62 +459,67 @@ class _FeedScreenState extends State<FeedScreen> {
               ),
             ),
 
-      // Persistent Blinkit Checkout Floating Bar when services are added!
+      // Animated Persistent Blinkit Checkout Floating Bar when services are added!
       bottomSheet: _cartListingIds.isNotEmpty
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                color: BlinkitTheme.blinkitGreen,
-                boxShadow: [
-                  BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, -2)),
-                ],
-              ),
-              child: SafeArea(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${_cartListingIds.length} Service(s) Selected',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'Sora',
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            '📍 $_userLocation • Free Checkout',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: BlinkitTheme.blinkitYellow,
-                        foregroundColor: const Color(0xFF0C831F),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      ),
-                      onPressed: _openCheckoutModal,
-                      icon: const Icon(Icons.shopping_cart_checkout, size: 18),
-                      label: const Text(
-                        'View Checkout Cart →',
-                        style: TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w900, fontSize: 13),
-                      ),
-                    ),
+          ? AnimatedSlide(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              offset: Offset.zero,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: BlinkitTheme.blinkitGreen,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, -2)),
                   ],
+                ),
+                child: SafeArea(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${_cartListingIds.length} Service(s) Selected',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Sora',
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              '📍 $_userLocation • Free Checkout',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: BlinkitTheme.blinkitYellow,
+                          foregroundColor: const Color(0xFF0C831F),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        ),
+                        onPressed: _openCheckoutModal,
+                        icon: const Icon(Icons.shopping_cart_checkout, size: 18),
+                        label: const Text(
+                          'View Checkout Cart →',
+                          style: TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w900, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
@@ -429,15 +532,10 @@ class _FeedScreenState extends State<FeedScreen> {
               height: 46,
               child: FloatingActionButton.extended(
                 onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CreateScreen(
-                        repository: widget.repository,
-                        aiService: widget.aiService,
-                      ),
-                    ),
-                  );
+                  await context.pushSmooth(CreateScreen(
+                    repository: widget.repository,
+                    aiService: widget.aiService,
+                  ));
                   _loadListings();
                 },
                 icon: const Icon(Icons.add, fontWeight: FontWeight.bold, size: 18),
@@ -463,7 +561,8 @@ class _FeedScreenState extends State<FeedScreen> {
         _applyFilters();
       },
       borderRadius: BorderRadius.circular(16),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? BlinkitTheme.blinkitGreen : Colors.transparent,

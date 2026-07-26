@@ -3,7 +3,7 @@ import '../../domain/models/category.dart';
 import '../../domain/models/listing.dart';
 import '../theme/blinkit_theme.dart';
 
-class ListingCard extends StatelessWidget {
+class ListingCard extends StatefulWidget {
   final Listing listing;
   final VoidCallback onTap;
   final bool isAdded;
@@ -16,6 +16,13 @@ class ListingCard extends StatelessWidget {
     this.isAdded = false,
     required this.onAddTap,
   });
+
+  @override
+  State<ListingCard> createState() => _ListingCardState();
+}
+
+class _ListingCardState extends State<ListingCard> {
+  bool _isHovered = false;
 
   Color _getStatusColor(ListingStatus status) {
     switch (status) {
@@ -33,156 +40,189 @@ class ListingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cat = ListingCategory.getById(listing.categoryId);
-    final statusColor = _getStatusColor(listing.status);
-    final isOffer = listing.type == ListingType.offer;
+    final cat = ListingCategory.getById(widget.listing.categoryId);
+    final statusColor = _getStatusColor(widget.listing.status);
+    final isOffer = widget.listing.type == ListingType.offer;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: isDark ? 1 : 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Image Thumbnail Container (Matching Image 3: Padded, centered BoxFit.contain, not stretched!)
-              Container(
-                height: 100,
-                width: double.infinity,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.network(
-                            listing.imageUrl!,
-                            fit: BoxFit.cover,
-                            height: 92,
-                            width: double.infinity,
-                            errorBuilder: (_, __, ___) => Text(cat.icon, style: const TextStyle(fontSize: 32)),
-                          ),
-                        )
-                      : Text(cat.icon, style: const TextStyle(fontSize: 32)),
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              // Speed & Category Tags
-              Row(
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        transform: _isHovered ? (Matrix4.identity()..translate(0, -3, 0)) : Matrix4.identity(),
+        child: Card(
+          margin: EdgeInsets.zero,
+          elevation: _isHovered ? 6 : (isDark ? 1 : 2),
+          shadowColor: BlinkitTheme.blinkitGreen.withOpacity(_isHovered ? 0.25 : 0.05),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: _isHovered
+                  ? BlinkitTheme.blinkitGreen
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              width: _isHovered ? 1.5 : 1,
+            ),
+          ),
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.all(9.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.timer_outlined, size: 10, color: Colors.grey),
-                  const SizedBox(width: 2),
-                  Text(
-                    '8 MINS',
-                    style: TextStyle(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${cat.icon} ${cat.name}',
-                    style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 4),
-
-              // Title (Max 2 lines)
-              Text(
-                listing.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  height: 1.2,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-
-              // Area & Subtext
-              Text(
-                '📍 ${listing.area}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Bottom Action Bar (Status Pill on left, Green ADD / ADDED button on right)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Type Pill
+                  // Image Thumbnail Container (Centered BoxFit.contain)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    height: 102,
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(6),
+                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(
-                      isOffer ? '📤 Offer' : '📥 Request',
-                      style: TextStyle(
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w900,
-                        color: statusColor,
-                      ),
+                    child: Center(
+                      child: widget.listing.imageUrl != null && widget.listing.imageUrl!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                widget.listing.imageUrl!,
+                                fit: BoxFit.cover,
+                                height: 94,
+                                width: double.infinity,
+                                errorBuilder: (_, __, ___) => Text(cat.icon, style: const TextStyle(fontSize: 34)),
+                              ),
+                            )
+                          : Text(cat.icon, style: const TextStyle(fontSize: 34)),
                     ),
                   ),
 
-                  // Green ADD / ADDED Checkout Toggle Button
-                  InkWell(
-                    onTap: onAddTap,
-                    borderRadius: BorderRadius.circular(6),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      height: 26,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: isAdded
-                            ? BlinkitTheme.blinkitGreen
-                            : (isDark ? const Color(0xFF0C831F).withOpacity(0.15) : Colors.white),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.2),
+                  const SizedBox(height: 8),
+
+                  // Speed & Category Tags
+                  Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, size: 11, color: BlinkitTheme.swiggyOrange),
+                      const SizedBox(width: 3),
+                      Text(
+                        '8 MINS',
+                        style: TextStyle(
+                          fontFamily: 'Sora',
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.3,
+                          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                        ),
                       ),
-                      child: Center(
+                      const Spacer(),
+                      Text(
+                        '${cat.icon} ${cat.name}',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  // Enhanced Title Text (Max 2 lines)
+                  Text(
+                    widget.listing.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Sora',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      height: 1.25,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // Area Text
+                  Text(
+                    '📍 ${widget.listing.area}',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 10.5,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Bottom Action Bar (Status Pill on left, Green ADD / ADDED button on right)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Type Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                         child: Text(
-                          isAdded ? 'ADDED ✓' : 'ADD',
+                          isOffer ? '📤 Offer' : '📥 Request',
                           style: TextStyle(
-                            fontSize: 9.5,
+                            fontFamily: 'Sora',
+                            fontSize: 9,
                             fontWeight: FontWeight.w900,
-                            color: isAdded ? Colors.white : BlinkitTheme.blinkitGreen,
+                            color: statusColor,
                           ),
                         ),
                       ),
-                    ),
+
+                      // Green ADD / ADDED Checkout Toggle Button
+                      InkWell(
+                        onTap: widget.onAddTap,
+                        borderRadius: BorderRadius.circular(7),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          height: 28,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: widget.isAdded
+                                ? BlinkitTheme.blinkitGreen
+                                : (isDark ? const Color(0xFF0C831F).withOpacity(0.18) : Colors.white),
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.3),
+                          ),
+                          child: Center(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 180),
+                              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                              child: Text(
+                                widget.isAdded ? 'ADDED ✓' : 'ADD',
+                                key: ValueKey(widget.isAdded),
+                                style: TextStyle(
+                                  fontFamily: 'Sora',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.3,
+                                  color: widget.isAdded ? Colors.white : BlinkitTheme.blinkitGreen,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

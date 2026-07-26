@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../domain/models/booked_order.dart';
 import '../../domain/models/category.dart';
 import '../../domain/models/listing.dart';
+import '../../domain/services/order_service.dart';
 import '../theme/blinkit_theme.dart';
 
 class CheckoutSheet extends StatefulWidget {
@@ -30,7 +32,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
 
   String _selectedSlot = 'As soon as possible (8 mins)';
   bool _isConfirming = false;
-  Map<String, dynamic>? _confirmedOrderReceipt;
+  BookedOrder? _confirmedOrderReceipt;
 
   final List<String> _timeSlots = [
     'As soon as possible (8 mins)',
@@ -77,21 +79,25 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
 
     if (!mounted) return;
 
-    final bookingId = '#LH-${Random().nextInt(89999) + 10000}';
-    final receipt = {
-      'bookingId': bookingId,
-      'name': name,
-      'phone': phone,
-      'location': loc,
-      'slot': _selectedSlot,
-      'notes': _noteController.text.trim(),
-      'timestamp': DateTime.now(),
-      'services': widget.selectedListings.map((l) => l.title).toList(),
-    };
+    final bookingRef = '#LH-${Random().nextInt(89999) + 10000}';
+    final order = BookedOrder(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      bookingRef: bookingRef,
+      serviceTitles: widget.selectedListings.map((l) => l.title).toList(),
+      userName: name,
+      userPhone: phone,
+      location: loc,
+      timeSlot: _selectedSlot,
+      notes: _noteController.text.trim(),
+      bookedAt: DateTime.now(),
+    );
+
+    // Save order locally so user can view active orders anytime!
+    await OrderService.saveOrder(order);
 
     setState(() {
       _isConfirming = false;
-      _confirmedOrderReceipt = receipt;
+      _confirmedOrderReceipt = order;
     });
   }
 
@@ -99,7 +105,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // If order confirmed, show Output Confirmation Receipt!
+    // Output Confirmation Receipt Box
     if (_confirmedOrderReceipt != null) {
       return Container(
         padding: const EdgeInsets.all(24),
@@ -123,7 +129,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
             ),
             const Center(
               child: Text(
-                'Your request has been dispatched to nearby local providers.',
+                'Your request has been saved and dispatched to nearby local providers.',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),
@@ -143,24 +149,24 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Booking ID:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const Text('Booking Ref ID:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       Text(
-                        _confirmedOrderReceipt!['bookingId'],
+                        _confirmedOrderReceipt!.bookingRef,
                         style: const TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w900, color: BlinkitTheme.blinkitGreen),
                       ),
                     ],
                   ),
                   const Divider(height: 16),
-                  _buildReceiptRow('Customer Name:', _confirmedOrderReceipt!['name']),
-                  _buildReceiptRow('Contact Phone:', _confirmedOrderReceipt!['phone']),
-                  _buildReceiptRow('Service Address:', _confirmedOrderReceipt!['location']),
-                  _buildReceiptRow('Timing Slot:', _confirmedOrderReceipt!['slot']),
-                  if (_confirmedOrderReceipt!['notes'].toString().isNotEmpty)
-                    _buildReceiptRow('Instructions:', _confirmedOrderReceipt!['notes']),
+                  _buildReceiptRow('Customer Name:', _confirmedOrderReceipt!.userName),
+                  _buildReceiptRow('Contact Phone:', _confirmedOrderReceipt!.userPhone),
+                  _buildReceiptRow('Service Address:', _confirmedOrderReceipt!.location),
+                  _buildReceiptRow('Timing Slot:', _confirmedOrderReceipt!.timeSlot),
+                  if (_confirmedOrderReceipt!.notes.isNotEmpty)
+                    _buildReceiptRow('Instructions:', _confirmedOrderReceipt!.notes),
                   const SizedBox(height: 8),
                   const Text('Requested Services:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
                   const SizedBox(height: 4),
-                  ...(_confirmedOrderReceipt!['services'] as List<String>).map((s) => Text('• $s', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                  ..._confirmedOrderReceipt!.serviceTitles.map((s) => Text('• $s', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                 ],
               ),
             ),
@@ -181,7 +187,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                   widget.onClearCart();
                   widget.onOrderConfirmed();
                 },
-                child: const Text('Done · Return to Local Board', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                child: const Text('Done · View My Ordered Services', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
           ],
@@ -399,7 +405,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
         ],
       ),
     );

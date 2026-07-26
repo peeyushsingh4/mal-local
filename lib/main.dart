@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'data/seed_data.dart';
 import 'domain/services/deterministic_ai_service.dart';
 import 'domain/services/local_ai_service.dart';
-import 'presentation/screens/feed_screen.dart';
+import 'presentation/screens/splash_screen.dart';
 import 'presentation/theme/blinkit_theme.dart';
 import 'repository/listing_repository.dart';
 import 'repository/local_listing_repository.dart';
@@ -27,7 +27,7 @@ void main() async {
   ));
 }
 
-class LocalHiveApp extends StatelessWidget {
+class LocalHiveApp extends StatefulWidget {
   final ListingRepository repository;
   final LocalAiService aiService;
 
@@ -38,17 +38,42 @@ class LocalHiveApp extends StatelessWidget {
   });
 
   @override
+  State<LocalHiveApp> createState() => _LocalHiveAppState();
+}
+
+class _LocalHiveAppState extends State<LocalHiveApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void _toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = _themeMode == ThemeMode.dark;
+
     return MaterialApp(
       title: 'LocalHive',
       debugShowCheckedModeBanner: false,
       theme: BlinkitTheme.lightTheme,
       darkTheme: BlinkitTheme.darkTheme,
-      themeMode: ThemeMode.dark, // Default Dark theme
+      themeMode: _themeMode,
       showSemanticsDebugger: false,
-      home: FeedScreen(
-        repository: repository,
-        aiService: aiService,
+      builder: (context, child) {
+        return AnimatedTheme(
+          data: isDark ? BlinkitTheme.darkTheme : BlinkitTheme.lightTheme,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOutCubic,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+      home: SplashScreen(
+        repository: widget.repository,
+        aiService: widget.aiService,
+        onToggleTheme: _toggleTheme,
+        isDarkMode: isDark,
       ),
     );
   }

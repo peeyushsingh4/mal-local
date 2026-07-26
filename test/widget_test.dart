@@ -5,7 +5,7 @@ import 'package:mal_local/repository/local_listing_repository.dart';
 import 'package:mal_local/domain/services/deterministic_ai_service.dart';
 
 void main() {
-  testWidgets('LocalHive App loads cleanly', (WidgetTester tester) async {
+  testWidgets('LocalHive App loads splash screen and transitions to feed', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final repo = LocalListingRepository(prefs);
@@ -16,6 +16,10 @@ void main() {
       aiService: aiService,
     ));
 
-    expect(find.text('LocalHive'), findsOneWidget);
+    // Fast-forward 1 second for splash animation auto-navigation
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 Cart'), findsOneWidget);
   });
 }
