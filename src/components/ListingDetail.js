@@ -2,29 +2,27 @@ import { listingRepository } from '../storage/ListingRepository.js';
 import { getCategoryById } from '../data/categories.js';
 import { router } from '../router/Router.js';
 import { showToast } from './Toast.js';
+import { icon } from './icons.js';
 
-/**
- * Render the listing detail page.
- * @param {string} id - Listing ID to display
- * @returns {Promise<string>} HTML string
- */
 export async function renderListingDetail(id) {
   const listing = await listingRepository.getById(id);
   
   if (!listing) {
     return `
-      <div class="page-container animate-in">
+      <div class="page-container animate-in" style="padding-top: 84px;">
         <div class="empty-state">
-          <div style="font-size:3rem" aria-hidden="true">🔍</div>
-          <h1>Listing not found</h1>
+          <div style="font-size:3rem;color:var(--blinkit-yellow)" aria-hidden="true">${icon('search')}</div>
+          <h1>Listing Not Found</h1>
           <p>This listing may have been deleted or doesn't exist.</p>
-          <a href="#/" class="btn btn-primary">Back to Feed</a>
+          <a href="#/" class="btn btn-primary btn-blinkit-hero">
+            ${icon('arrowLeft')} Back to Feed
+          </a>
         </div>
       </div>
     `;
   }
   
-  const category = getCategoryById(listing.category) || { name: 'Unknown', icon: '❓' };
+  const category = getCategoryById(listing.category) || { name: 'Unknown', icon: '❓', color: '#0C831F' };
   const date = new Date(listing.createdAt || Date.now()).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'long',
@@ -41,17 +39,15 @@ export async function renderListingDetail(id) {
     }
   };
 
-  const statusIcons = { active: '●', saved: '★', contacted: '✉', closed: '✕' };
-
   const getActionButtons = (status) => {
     let buttons = '';
     
     if (status === 'active') {
-      buttons += `<button type="button" class="btn btn-secondary action-btn" data-action="saved" aria-label="Save listing">★ Save</button>`;
-      buttons += `<button type="button" class="btn btn-primary action-btn" data-action="contacted" aria-label="Mark as contacted">✉ Mark Contacted</button>`;
-      buttons += `<button type="button" class="btn btn-secondary action-btn" data-action="closed" aria-label="Close listing">✕ Close Listing</button>`;
+      buttons += `<button type="button" class="btn btn-secondary action-btn" data-action="saved" aria-label="Save listing" style="display:inline-flex;align-items:center;gap:6px;">${icon('bookmark')} Save</button>`;
+      buttons += `<button type="button" class="btn btn-primary action-btn btn-blinkit-hero" data-action="contacted" aria-label="Mark as contacted" style="display:inline-flex;align-items:center;gap:6px;">${icon('chat')} Mark Contacted</button>`;
+      buttons += `<button type="button" class="btn btn-secondary action-btn" data-action="closed" aria-label="Close listing" style="display:inline-flex;align-items:center;gap:6px;">✕ Close Listing</button>`;
     } else if (status === 'saved') {
-      buttons += `<button type="button" class="btn btn-primary action-btn" data-action="contacted" aria-label="Mark as contacted">✉ Mark Contacted</button>`;
+      buttons += `<button type="button" class="btn btn-primary action-btn btn-blinkit-hero" data-action="contacted" aria-label="Mark as contacted" style="display:inline-flex;align-items:center;gap:6px;">${icon('chat')} Mark Contacted</button>`;
       buttons += `<button type="button" class="btn btn-secondary action-btn" data-action="closed" aria-label="Close listing">✕ Close Listing</button>`;
       buttons += `<button type="button" class="btn btn-secondary action-btn" data-action="active" aria-label="Reactivate listing">↩ Reactivate</button>`;
     } else if (status === 'contacted') {
@@ -61,47 +57,53 @@ export async function renderListingDetail(id) {
       buttons += `<button type="button" class="btn btn-secondary action-btn" data-action="active" aria-label="Reactivate listing">↩ Reactivate</button>`;
     }
     
-    buttons += `<button type="button" class="btn btn-danger delete-btn" aria-label="Delete listing">🗑 Delete</button>`;
+    buttons += `<button type="button" class="btn btn-danger delete-btn" aria-label="Delete listing" style="display:inline-flex;align-items:center;gap:6px;">${icon('trash')} Delete</button>`;
     return buttons;
   };
 
   const status = listing.status || 'active';
 
   return `
-    <div class="page-container animate-in">
-      <a href="#/" class="btn btn-ghost" style="margin-bottom:16px;padding:0;min-height:auto">← Back to feed</a>
+    <div class="page-container animate-in" style="padding-top: 84px;">
+      <a href="#/" class="btn btn-ghost" style="margin-bottom:16px;padding:0;min-height:auto;display:inline-flex;align-items:center;gap:6px;">
+        ${icon('arrowLeft')} Back to Feed
+      </a>
       
-      <article class="listing-card" style="padding:28px" aria-labelledby="detail-title">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <span class="badge" style="border:1px solid ${category.color || 'var(--glass-border)'};border-radius:var(--radius-pill);padding:4px 12px;font-size:12px">
+      <article class="listing-card blinkit-card" style="padding:32px;box-shadow:var(--shadow-md);" aria-labelledby="detail-title">
+        <!-- Blinkit Top Badges -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <span class="blinkit-time-tag" style="background: rgba(247, 196, 19, 0.15); color: #D4A300; border: 1px solid rgba(247, 196, 19, 0.3); padding: 4px 10px; border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+              ${icon('flash')} 8 MINS HYPERLOCAL
+            </span>
+            <span class="badge" style="background:${category.bg || 'rgba(12, 131, 31, 0.12)'};color:${category.color || 'var(--blinkit-green)'};border:1px solid rgba(12, 131, 31, 0.2);border-radius:var(--radius-pill);padding:4px 12px;font-size:12px;font-weight:700;">
               ${category.icon} ${category.name}
             </span>
-            <span class="badge status-${status}" style="border-radius:var(--radius-pill);padding:4px 12px;font-size:12px;text-transform:capitalize">
-              ${statusIcons[status] || '●'} ${status}
-            </span>
-            ${listing.type ? `<span class="chip" style="font-size:12px;text-transform:capitalize">${listing.type === 'offer' ? '📤' : '📥'} ${listing.type}</span>` : ''}
+            ${listing.type ? `<span class="chip" style="font-size:12px;font-weight:800;text-transform:uppercase;">${listing.type === 'offer' ? '📤 Offer' : '📥 Request'}</span>` : ''}
           </div>
+          <span class="badge status-${status}" style="border-radius:var(--radius-pill);padding:4px 12px;font-size:12px;text-transform:capitalize;font-weight:800;">
+            ${status}
+          </span>
         </div>
         
-        <h1 id="detail-title" style="margin-top:0;margin-bottom:16px">${listing.title}</h1>
+        <h1 id="detail-title" style="margin-top:0;margin-bottom:16px;font-weight:800;">${listing.title}</h1>
         
-        <p style="white-space:pre-wrap;margin-bottom:24px;line-height:1.7;color:var(--text-muted)">${listing.description}</p>
+        <p style="white-space:pre-wrap;margin-bottom:24px;line-height:1.7;color:var(--text-muted);font-size:1rem;">${listing.description}</p>
         
-        <div style="display:flex;flex-wrap:wrap;gap:20px;margin-bottom:24px;font-size:14px;color:var(--text-muted)">
-          <div style="display:flex;align-items:center;gap:6px">
-            <span aria-hidden="true">📍</span> <span>${listing.area}</span>
+        <div style="display:flex;flex-wrap:wrap;gap:20px;margin-bottom:24px;font-size:14px;color:var(--text-muted);background:var(--bg-dark-elevated-2);padding:14px 18px;border-radius:var(--radius-sm);border:1px solid var(--glass-border);">
+          <div style="display:flex;align-items:center;gap:6px;font-weight:600;">
+            <span style="color:var(--swiggy-orange);">${icon('location')}</span> <span>${listing.area}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
+          <div style="display:flex;align-items:center;gap:6px;font-weight:600;">
             <span>${getContactIcon(listing.contactPreference)}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span aria-hidden="true">📅</span> <time datetime="${listing.createdAt}">${date}</time>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span>${icon('clock')}</span> <time datetime="${listing.createdAt}">${date}</time>
           </div>
-          ${listing.aiGenerated ? `<span class="chip">🤖 AI-assisted</span>` : ''}
+          ${listing.aiGenerated ? `<span class="chip" style="display:inline-flex;align-items:center;gap:4px;">${icon('bot')} AI-assisted</span>` : ''}
         </div>
         
-        <hr style="border:0;border-top:1px solid var(--glass-border);margin:24px 0" />
+        <hr style="border:0;border-top:1px dashed var(--glass-border);margin:24px 0" />
         
         <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center" id="action-buttons-container">
           ${getActionButtons(status)}
@@ -112,7 +114,7 @@ export async function renderListingDetail(id) {
     <!-- Delete Confirmation Modal -->
     <div class="modal-overlay" id="delete-modal-overlay">
       <div class="modal" role="dialog" aria-labelledby="delete-modal-title" aria-modal="true">
-        <h2 id="delete-modal-title">🗑 Delete Listing</h2>
+        <h2 id="delete-modal-title" style="display:flex;align-items:center;gap:8px;">${icon('trash', 'var(--zomato-red)')} Delete Listing</h2>
         <p style="color:var(--text-muted);margin:16px 0">Are you sure you want to delete this listing? This action cannot be undone.</p>
         <div style="display:flex;gap:12px;justify-content:flex-end">
           <button type="button" class="btn btn-ghost" id="cancel-delete">Cancel</button>
@@ -123,20 +125,14 @@ export async function renderListingDetail(id) {
   `;
 }
 
-/**
- * Initialize event handlers for the listing detail page.
- * @param {string} id - Listing ID
- */
 export function initListingDetail(id) {
   const container = document.getElementById('action-buttons-container');
-  if (!container) return; // Not found state
+  if (!container) return;
 
-  // Status update handler
   const updateStatus = async (newStatus) => {
     try {
       await listingRepository.update(id, { status: newStatus });
       showToast(`Listing marked as ${newStatus}`, 'success');
-      // Re-render the detail page
       const { renderListingDetail: rerender, initListingDetail: reinit } = await import('./ListingDetail.js');
       const root = document.getElementById('app-root');
       if (root) {
@@ -145,11 +141,9 @@ export function initListingDetail(id) {
       }
     } catch (error) {
       showToast('Failed to update status', 'error');
-      console.error('[ListingDetail] Update error:', error);
     }
   };
 
-  // Action buttons
   container.addEventListener('click', (e) => {
     const btn = e.target.closest('.action-btn');
     if (!btn) return;
@@ -157,7 +151,6 @@ export function initListingDetail(id) {
     if (action) updateStatus(action);
   });
 
-  // Delete modal
   const deleteBtn = container.querySelector('.delete-btn');
   const overlay = document.getElementById('delete-modal-overlay');
   const cancelBtn = document.getElementById('cancel-delete');
@@ -174,12 +167,10 @@ export function initListingDetail(id) {
 
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // Close on overlay click
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) closeModal();
     });
 
-    // Close on Escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && overlay.classList.contains('active')) {
         closeModal();

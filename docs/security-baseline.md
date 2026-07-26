@@ -1,9 +1,18 @@
-# Security Documentation
+# Security Baseline & Security ADR Implementation
 
-- **Secrets management**: No API keys, tokens, or secrets in the codebase. No `.env` file committed. AI features use local model or deterministic fallback — no hosted API calls.
-- **Location privacy**: No exact home addresses stored. Listings use area names ("Pali Hill", "Carter Road") not street addresses. No GPS/geolocation API used. No precise coordinates stored.
-- **Input validation**: All listing fields validated before saving. HTML tags stripped from inputs. Title: 3-100 chars. Description: 10-1000 chars. Category: from predefined list only. Address-like patterns flagged.
-- **Data minimization**: Only essential listing data stored. No personal data beyond contact preference. No tracking, analytics, or cookies. No third-party scripts with data access.
-- **Data reset**: Users can delete all local data from Settings. Clear confirmation before destructive action. Reset removes all IndexedDB data. No residual data after reset.
-- **Storage security**: Data stored in IndexedDB (browser sandboxed). No data sent to external servers. Same-origin policy applies. Users can inspect/delete via browser DevTools.
-- **Threat model**: Local-only app with minimal attack surface. Main risks: XSS via listing content (mitigated by HTML stripping), local data exposure (mitigated by data minimization), dependency vulnerabilities (mitigated by minimal dependencies — only Vite as dev dependency).
+This document outlines the security posture of **MAL Local** based on the **MAL Lab 01 Security ADR: "The Walking Skeleton Has No Skin"** ([`docs/adr/0002-security-skeleton-stance.md`](adr/0002-security-skeleton-stance.md)).
+
+## Summary of the 5 Skeleton-Stage Decisions
+
+1. **Secrets Management**: No API keys, secret tokens, or private service credentials inside the app bundle. AI features run locally or via deterministic fallback ([`src/ai/LocalAiService.js`](../src/ai/LocalAiService.js)).
+2. **Client/Server Trust Boundary**: Inputs validated and sanitized in [`Listing.js`](../src/models/Listing.js). The client is treated as untrusted; server-side re-validation will be enforced when backend sync is introduced.
+3. **Data-at-Rest & Key Isolation**: Stored locally in IndexedDB protected by browser Same-Origin Policy (SOP). Exact house/flat numbers and live GPS tracking are rejected in favor of neighborhood area names ("Pali Hill", "Carter Road"). Users can instantly wipe local data in Settings.
+4. **Certificate Pinning**: Deferred for offline slice as zero network requests leave the device. Stance documented for future HTTPS API endpoints.
+5. **Telemetry & Privacy Allowlist**: Zero telemetry exfiltration. No third-party trackers, crash reporters, or analytics scripts.
+
+## Threat Model & Controls
+
+- **XSS Mitigation**: HTML tags stripped automatically from user input via domain model sanitization.
+- **Data Minimization**: No personal identity, exact home address, or payment details stored on-device.
+- **Data Reset**: Instant wipe capability in Settings clears IndexedDB completely.
+- **Reference**: See [`docs/adr/0002-security-skeleton-stance.md`](adr/0002-security-skeleton-stance.md) for full decision records.

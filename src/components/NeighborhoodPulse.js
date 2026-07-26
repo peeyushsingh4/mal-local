@@ -2,10 +2,8 @@ import { listingRepository } from '../storage/ListingRepository.js';
 import { categories, getCategoryById } from '../data/categories.js';
 import { localAiService } from '../ai/LocalAiService.js';
 import { router } from '../router/Router.js';
+import { icon } from './icons.js';
 
-/**
- * Get relative time string from an ISO date string.
- */
 function getRelativeTime(dateStr) {
   const now = new Date();
   const date = new Date(dateStr);
@@ -26,11 +24,11 @@ export async function renderNeighborhoodPulse() {
   
   const communityScore = Math.min(100, Math.round((activeListings / Math.max(totalListings, 1)) * 100 + (totalCategories * 10)));
   
-  let scoreColor = 'var(--accent-green)';
+  let scoreColor = 'var(--blinkit-green)';
   if (communityScore < 40) {
-    scoreColor = 'var(--accent-coral)';
+    scoreColor = 'var(--zomato-red)';
   } else if (communityScore < 70) {
-    scoreColor = 'var(--accent-purple)';
+    scoreColor = 'var(--blinkit-yellow)';
   }
   
   // Category Breakdown
@@ -58,7 +56,7 @@ export async function renderNeighborhoodPulse() {
     </div>
   `).join('');
 
-  // Recent Activity (sorted by createdAt descending)
+  // Recent Activity
   const recentListings = [...allListings]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
@@ -70,10 +68,12 @@ export async function renderNeighborhoodPulse() {
            aria-label="View ${l.title}" 
            style="display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--glass-border);cursor:pointer;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:1.5rem" aria-hidden="true">${cat ? cat.icon : '📦'}</span>
+          <span style="font-size:1.4rem" aria-hidden="true">${cat ? cat.icon : '📦'}</span>
           <div>
-            <div style="font-weight:600;color:var(--text-main)">${l.title}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted)">${getRelativeTime(l.createdAt)}</div>
+            <div style="font-weight:700;color:var(--text-main);font-size:0.95rem;">${l.title}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
+              ${icon('clock')} ${getRelativeTime(l.createdAt)}
+            </div>
           </div>
         </div>
         <span class="badge status-${l.status}">${l.status}</span>
@@ -83,65 +83,72 @@ export async function renderNeighborhoodPulse() {
   
   // AI Status
   const aiStatus = localAiService.getStatus();
-  const aiText = aiStatus.modelAvailable ? 'Local model' : 'Template fallback';
-  const aiDotColor = aiStatus.modelAvailable ? 'var(--accent-green)' : 'var(--text-muted)';
+  const aiText = aiStatus.modelAvailable ? 'Local model' : 'Deterministic fallback (Offline)';
+  const aiDotColor = aiStatus.modelAvailable ? 'var(--blinkit-green)' : 'var(--blinkit-yellow)';
   
   return `
     <style>
       .category-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-      .category-bar-label { min-width: 120px; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .category-bar-track { flex: 1; height: 24px; background: var(--glass-bg); border-radius: var(--radius-pill); overflow: hidden; }
-      .category-bar-fill { height: 100%; border-radius: var(--radius-pill); transition: width 0.5s ease; min-width: 2px; }
-      .category-bar-count { min-width: 32px; text-align: right; font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-muted); }
+      .category-bar-label { min-width: 130px; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+      .category-bar-track { flex: 1; height: 20px; background: var(--bg-dark-elevated-2); border-radius: var(--radius-pill); overflow: hidden; border: 1px solid var(--glass-border); }
+      .category-bar-fill { height: 100%; border-radius: var(--radius-pill); transition: width 0.5s ease; min-width: 4px; }
+      .category-bar-count { min-width: 32px; text-align: right; font-family: var(--font-mono); font-size: 0.875rem; color: var(--text-muted); font-weight: 700; }
       .recent-listing-item:hover { background: var(--glass-bg-hover); }
     </style>
     
-    <div class="page-container animate-in">
-      <div class="page-header">
-        <h1>Neighborhood Pulse</h1>
-        <p style="color:var(--text-muted)">Bandra West community activity</p>
+    <div class="page-container animate-in" style="padding-top: 84px;">
+      <div class="page-header" style="background: var(--grad-hero); border: 1px solid rgba(247, 196, 19, 0.3); padding: 22px 24px; border-radius: var(--radius-md); margin-bottom: 24px;">
+        <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--blinkit-yellow); color: #0C831F; font-size: 0.75rem; font-weight: 900; padding: 4px 10px; border-radius: var(--radius-pill); text-transform: uppercase; margin-bottom: 8px;">
+          ${icon('pulse')} Real-Time Analytics
+        </div>
+        <h1 style="margin:0 0 6px 0;">Neighborhood Pulse</h1>
+        <p style="color:var(--text-muted);margin:0;">Bandra West community health score & active category metrics</p>
       </div>
       
-      <!-- Stats -->
-      <div class="grid grid-3" style="margin-bottom:32px">
-        <div class="stat-card">
+      <!-- Stats Grid -->
+      <div class="grid grid-3" style="margin-bottom:28px">
+        <div class="stat-card" style="border-left: 4px solid var(--blinkit-yellow);">
           <div class="stat-label">Total Listings</div>
           <div class="stat-value">${totalListings}</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="border-left: 4px solid var(--blinkit-green);">
           <div class="stat-label">Active Listings</div>
-          <div class="stat-value">${activeListings}</div>
+          <div class="stat-value" style="color: var(--blinkit-green);">${activeListings}</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="border-left: 4px solid ${scoreColor};">
           <div class="stat-label">Community Score</div>
           <div class="stat-value" style="color:${scoreColor}">${communityScore}%</div>
         </div>
       </div>
       
-      <!-- Category Breakdown -->
-      <div class="pulse-card" style="margin-bottom:24px">
-        <h2 style="font-size:1.1rem;margin-bottom:16px">Category Activity</h2>
+      <!-- Category Breakdown Bar Chart -->
+      <div class="pulse-card" style="margin-bottom:24px; padding: 24px;">
+        <h2 style="font-size:1.15rem;margin-bottom:18px;display:flex;align-items:center;gap:8px;">
+          Category Distribution in Bandra W
+        </h2>
         ${categoryHtml}
       </div>
       
-      <!-- Recent + AI Status -->
+      <!-- Recent Activity + AI Status -->
       <div class="grid grid-2">
-        <div class="pulse-card">
-          <h2 style="font-size:1.1rem;margin-bottom:16px">Recent Activity</h2>
+        <div class="pulse-card" style="padding: 24px;">
+          <h2 style="font-size:1.15rem;margin-bottom:16px;">Recent Activity</h2>
           ${recentHtml}
         </div>
-        <div class="pulse-card">
-          <h2 style="font-size:1.1rem;margin-bottom:16px">AI Status</h2>
-          <div style="display:flex;align-items:center;padding:16px;background:var(--glass-bg);border-radius:var(--radius-md)">
-            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${aiDotColor};margin-right:10px" aria-hidden="true"></span>
-            <strong>🤖 AI: ${aiText}</strong>
+        <div class="pulse-card" style="padding: 24px;">
+          <h2 style="font-size:1.15rem;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+            ${icon('bot', 'var(--blinkit-yellow)')} Local AI Status
+          </h2>
+          <div style="display:flex;align-items:center;padding:16px;background:var(--bg-dark-elevated-2);border-radius:var(--radius-md);border:1px solid var(--glass-border);">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${aiDotColor};margin-right:10px;" aria-hidden="true"></span>
+            <strong style="font-size: 0.95rem;">AI Service: ${aiText}</strong>
           </div>
-          <p style="margin-top:16px;font-size:0.875rem;color:var(--text-muted)">
-            MAL Local uses local AI for description suggestions. No data is sent to external servers.
+          <p style="margin-top:16px;font-size:0.875rem;color:var(--text-muted);line-height:1.6;">
+            MAL Local operates with zero remote server dependency. AI suggestions generate instantly using local template fallbacks or browser-embedded models.
           </p>
-          <div style="margin-top:12px;font-size:0.8rem;color:var(--text-muted)">
-            <div>Initialized: ${aiStatus.initialized ? '✓ Yes' : '✗ No'}</div>
-            <div>Fallback available: ✓ Always</div>
+          <div style="margin-top:14px;font-size:0.82rem;color:var(--text-muted);display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">${icon('shieldCheck', 'var(--blinkit-green)')} Privacy: 100% On-Device</div>
+            <div style="display:flex;align-items:center;gap:6px;">${icon('check', 'var(--blinkit-green)')} Offline Fallback: Always Available</div>
           </div>
         </div>
       </div>
@@ -157,7 +164,6 @@ export function initNeighborhoodPulse() {
         router.navigate(`/listing/${id}`);
       }
     });
-    // Keyboard accessibility
     item.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();

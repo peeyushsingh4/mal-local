@@ -1,47 +1,50 @@
 /* ==========================================================================
-   Design System & Tokens (Blinkit / Swiggy / Zomato Hyperlocal Aesthetic)
+   Design System & Tokens — Blinkit Hyperlocal App Theme
    ========================================================================== */
 
 :root {
-  /* Core Colors - Dark Theme (Default) */
-  --bg-dark: #0B0E14;
-  --bg-dark-elevated: #121824;
+  /* Core Colors — Blinkit Dark Theme (Default) */
+  --bg-dark: #0A0E17;
+  --bg-dark-elevated: #121826;
   --bg-dark-elevated-2: #1A2234;
   
-  --text-main: #F4F6FB;
+  --text-main: #F8FAFC;
   --text-muted: #94A3B8;
   
-  /* Indian Hyperlocal Brand Accents (Blinkit / Swiggy / Zomato) */
+  /* Official Blinkit Brand Palette */
   --blinkit-yellow: #F7C413;
+  --blinkit-yellow-dark: #D4A300;
   --blinkit-green: #0C831F;
+  --blinkit-green-light: #E8F7EE;
   --swiggy-orange: #FC8019;
   --zomato-red: #E23744;
   --accent-purple: #8B5CF6;
-  
   --accent-blue: #38BDF8;
-  --accent-green: #22C55E;
-  --accent-coral: #FC8019;
   
-  --flutter: var(--swiggy-orange);
-  --kotlin: var(--blinkit-yellow);
-  --swift: var(--zomato-red);
+  --primary-brand: var(--blinkit-yellow);
+  --primary-brand-text: #0F172A;
+  
+  --flutter: var(--blinkit-yellow);
+  --kotlin: var(--blinkit-green);
+  --swift: var(--swiggy-orange);
 
   /* Gradients */
-  --grad-primary: linear-gradient(135deg, var(--swiggy-orange), #FF5E3A 50%, var(--zomato-red));
-  --grad-blinkit: linear-gradient(135deg, #F7C413, #0C831F);
-  --grad-header: linear-gradient(180deg, rgba(252, 128, 25, 0.12) 0%, rgba(11, 14, 20, 0) 100%);
+  --grad-primary: linear-gradient(135deg, #F7C413 0%, #0C831F 100%);
+  --grad-blinkit-badge: linear-gradient(135deg, #F7C413 0%, #FFB703 100%);
+  --grad-hero: linear-gradient(135deg, rgba(247, 196, 19, 0.12) 0%, rgba(12, 131, 31, 0.12) 100%);
   
-  /* Glass Effects */
+  /* Glass & Card Borders */
   --glass-bg: rgba(255, 255, 255, 0.04);
   --glass-bg-hover: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-border-hover: rgba(252, 128, 25, 0.4);
+  --glass-border-hover: var(--blinkit-yellow);
   
   /* Shadows */
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 4px 20px rgba(252, 128, 25, 0.35);
+  --shadow-glow-yellow: 0 4px 20px rgba(247, 196, 19, 0.3);
+  --shadow-glow-green: 0 4px 20px rgba(12, 131, 31, 0.3);
   
   /* Border Radius */
   --radius-sm: 10px;
@@ -61,22 +64,23 @@
 }
 
 [data-theme='light'] {
-  --bg-dark: #F4F6F9;
+  --bg-dark: #F4F6FB;
   --bg-dark-elevated: #FFFFFF;
-  --bg-dark-elevated-2: #EDF1F7;
+  --bg-dark-elevated-2: #F1F5F9;
   
   --text-main: #0F172A;
-  --text-muted: #475569;
+  --text-muted: #64748B;
   
   --glass-bg: #FFFFFF;
   --glass-bg-hover: #F8FAFC;
   --glass-border: rgba(15, 23, 42, 0.08);
-  --glass-border-hover: rgba(252, 128, 25, 0.5);
+  --glass-border-hover: var(--blinkit-green);
   
-  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.05);
   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.12);
-  --shadow-glow: 0 4px 20px rgba(252, 128, 25, 0.25);
+  --shadow-glow-yellow: 0 4px 20px rgba(247, 196, 19, 0.25);
+  --shadow-glow-green: 0 4px 20px rgba(12, 131, 31, 0.25);
 }
 
 /* ==========================================================================
@@ -108,33 +112,33 @@ body {
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
 h1 { font-size: clamp(1.75rem, 4vw, 2.75rem); }
 h2 { font-size: clamp(1.35rem, 3vw, 2rem); }
-h3 { font-size: clamp(1.15rem, 2.5vw, 1.4rem); }
-h4 { font-size: clamp(1rem, 2vw, 1.15rem); }
+h3 { font-size: clamp(1.1rem, 2.5vw, 1.35rem); }
+h4 { font-size: clamp(0.95rem, 2vw, 1.1rem); }
 
 /* Focus States (A11y) */
 :focus-visible {
-  outline: 2px solid var(--swiggy-orange);
+  outline: 2.5px solid var(--blinkit-yellow);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 /* Selection */
 ::selection {
-  background-color: rgba(252, 128, 25, 0.3);
-  color: inherit;
+  background-color: rgba(247, 196, 19, 0.4);
+  color: #000000;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-dark);
@@ -144,23 +148,15 @@ h4 { font-size: clamp(1rem, 2vw, 1.15rem); }
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--bg-dark-elevated-2) var(--bg-dark);
+  background: var(--blinkit-yellow);
 }
 
-/* ==========================================================================
-   Utilities
-   ========================================================================== */
-
-.grad {
-  background: var(--grad-primary);
+/* Utilities */
+.grad-blinkit {
+  background: linear-gradient(135deg, #F7C413 0%, #FFB703 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  display: inline-block;
 }
 
 .visually-hidden {
@@ -182,8 +178,9 @@ h4 { font-size: clamp(1rem, 2vw, 1.15rem); }
   width: auto;
   height: auto;
   padding: 1rem;
-  background: var(--bg-dark-elevated);
-  color: var(--text-main);
+  background: var(--blinkit-yellow);
+  color: #000;
+  font-weight: 800;
   z-index: 9999;
   border-radius: var(--radius-sm);
   clip: auto;

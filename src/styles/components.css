@@ -395,37 +395,52 @@ button.chip:hover {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 6px 14px;
-  background: rgba(252, 128, 25, 0.1);
-  color: var(--swiggy-orange);
-  border: 1.5px solid var(--swiggy-orange);
+  padding: 6px 16px;
+  background: rgba(12, 131, 31, 0.15);
+  color: var(--blinkit-green);
+  border: 1.5px solid var(--blinkit-green);
   border-radius: 8px;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.78rem;
+  font-weight: 900;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
   text-decoration: none;
   transition: all var(--transition-fast);
 }
 
 .btn-blinkit-add:hover {
-  background: var(--swiggy-orange);
+  background: var(--blinkit-green);
   color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(252, 128, 25, 0.4);
+  box-shadow: 0 4px 14px rgba(12, 131, 31, 0.4);
+}
+
+.btn-blinkit-hero {
+  background: var(--blinkit-yellow) !important;
+  color: #0C831F !important;
+  border: none !important;
+  font-weight: 900 !important;
+  font-family: var(--font-display) !important;
+  box-shadow: var(--shadow-glow-yellow) !important;
+}
+
+.btn-blinkit-hero:hover {
+  background: #FFB703 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(247, 196, 19, 0.5) !important;
 }
 
 .nav-btn-cta {
-  background: rgba(252, 128, 25, 0.15) !important;
-  color: var(--swiggy-orange) !important;
-  border: 1px solid rgba(252, 128, 25, 0.3) !important;
+  background: var(--blinkit-yellow) !important;
+  color: #0C831F !important;
+  border: none !important;
   border-radius: var(--radius-pill);
-  padding: 6px 14px !important;
-  font-weight: 700 !important;
+  padding: 6px 16px !important;
+  font-weight: 900 !important;
 }
 
 .nav-btn-cta:hover, .nav-btn-cta.active {
-  background: var(--grad-primary) !important;
-  color: #FFFFFF !important;
-  border-color: transparent !important;
+  background: #FFB703 !important;
+  color: #0C831F !important;
 }
 
 /* ==========================================================================
