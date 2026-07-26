@@ -26,19 +26,6 @@ class ListingCard extends StatelessWidget {
     }
   }
 
-  String _getStatusLabel(ListingStatus status) {
-    switch (status) {
-      case ListingStatus.active:
-        return 'Active';
-      case ListingStatus.saved:
-        return '★ Saved';
-      case ListingStatus.contacted:
-        return '✉ Contacted';
-      case ListingStatus.closed:
-        return '✕ Closed';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -46,217 +33,143 @@ class ListingCard extends StatelessWidget {
     final statusColor = _getStatusColor(listing.status);
     final isOffer = listing.type == ListingType.offer;
 
-    final composedSemanticLabel =
-        'Listing: ${listing.title}. Category: ${cat.name}. Type: ${isOffer ? "Offer" : "Request"}. Area: ${listing.area}. Status: ${_getStatusLabel(listing.status)}.';
-
-    return Semantics(
-      label: composedSemanticLabel,
-      button: true,
-      child: Card(
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-          ),
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: isDark ? 1 : 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
         ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Image / Visual Thumbnail Container for Help Provided
-              Stack(
-                children: [
-                  Container(
-                    height: 84,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: cat.bgTint,
-                    ),
-                    child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
-                        ? Image.network(
+              // Image Thumbnail Container (Matching Image 3: Padded, centered BoxFit.contain, not stretched!)
+              Container(
+                height: 110,
+                width: double.infinity,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
                             listing.imageUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Center(
-                              child: Text(cat.icon, style: const TextStyle(fontSize: 32)),
-                            ),
-                          )
-                        : Center(
-                            child: Text(cat.icon, style: const TextStyle(fontSize: 32)),
+                            height: 100,
+                            width: double.infinity,
+                            errorBuilder: (_, __, ___) => Text(cat.icon, style: const TextStyle(fontSize: 36)),
                           ),
-                  ),
+                        )
+                      : Text(cat.icon, style: const TextStyle(fontSize: 36)),
+                ),
+              ),
 
-                  // Overlay Category Pill
-                  Positioned(
-                    top: 6,
-                    left: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.65),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${cat.icon} ${cat.name}',
-                        style: const TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
+              const SizedBox(height: 8),
+
+              // Speed Badge (Matching Image 3: "⏱️ 8 MINS")
+              Row(
+                children: [
+                  const Icon(Icons.timer_outlined, size: 10, color: Colors.grey),
+                  const SizedBox(width: 2),
+                  Text(
+                    '8 MINS',
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
                   ),
-
-                  // Overlay 8 MINS Badge
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: BlinkitTheme.blinkitYellow,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.bolt, size: 8, color: BlinkitTheme.blinkitGreen),
-                          Text(
-                            '8 MINS',
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.w900,
-                              color: BlinkitTheme.blinkitGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  const Spacer(),
+                  // Category Tag
+                  Text(
+                    '${cat.icon} ${cat.name}',
+                    style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.grey),
                   ),
                 ],
               ),
 
-              // Card Content Area
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Text(
-                        listing.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
+              const SizedBox(height: 4),
 
-                      // Description
-                      Text(
-                        listing.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+              // Title (Matching Image 3: Bold, 12px)
+              Text(
+                listing.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  height: 1.2,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              // Area & Subtext (Matching Image 3: e.g. "32 pcs" / "📍 Pali Hill")
+              Text(
+                '📍 ${listing.area}',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+
+              const Spacer(),
+
+              // Bottom Action Bar (Matching Image 3: Status / Offer tag on left, Green ADD button on right)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Status Tag / Type Pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      isOffer ? '📤 Offer' : '📥 Request',
+                      style: TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+
+                  // Green ADD Button (Matching Image 3: White button with green border and ADD text)
+                  Container(
+                    height: 26,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0C831F).withOpacity(0.15) : Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.2),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'ADD',
                         style: TextStyle(
                           fontSize: 10,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                          height: 1.2,
+                          fontWeight: FontWeight.w900,
+                          color: BlinkitTheme.blinkitGreen,
                         ),
                       ),
-                      const Spacer(),
-
-                      // Area & Offer/Request Tag
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '📍 ${listing.area}',
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: isOffer
-                                  ? BlinkitTheme.blinkitGreen.withOpacity(0.12)
-                                  : BlinkitTheme.zomatoRed.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              isOffer ? 'OFFER' : 'REQ',
-                              style: TextStyle(
-                                fontSize: 7.5,
-                                fontWeight: FontWeight.w900,
-                                color: isOffer ? BlinkitTheme.blinkitGreen : BlinkitTheme.zomatoRed,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Bottom Action Bar (Status Pill + ADD Button)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Status Badge Pill
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: statusColor.withOpacity(0.3)),
-                            ),
-                            child: Text(
-                              _getStatusLabel(listing.status),
-                              style: TextStyle(
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w900,
-                                color: statusColor,
-                              ),
-                            ),
-                          ),
-
-                          // ADD Button
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: BlinkitTheme.blinkitGreen.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.2),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'ADD',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: BlinkitTheme.blinkitGreen,
-                                  ),
-                                ),
-                                SizedBox(width: 2),
-                                Icon(Icons.add, size: 10, color: BlinkitTheme.blinkitGreen),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../config/app_config.dart';
+import '../../domain/models/category.dart';
 import '../../domain/models/listing.dart';
 import '../../domain/services/local_ai_service.dart';
+import '../../domain/services/location_service.dart';
 import '../../repository/listing_repository.dart';
 import '../theme/blinkit_theme.dart';
 import '../widgets/blinkit_header.dart';
@@ -31,22 +32,26 @@ class _FeedScreenState extends State<FeedScreen> {
   List<Listing> _filteredListings = [];
   bool _isLoading = true;
 
-  String _userNeighborhood = AppConfig.defaultNeighborhoodName;
+  String _userLocation = 'Current Location';
   String _selectedCategory = 'all';
   ListingType? _selectedTypeFilter;
   String _searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadListings();
+    _initLocationAndListings();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  Future<void> _initLocationAndListings() async {
+    final savedLoc = await LocationService.getSavedLocation();
+    if (savedLoc == 'Detecting location...') {
+      final detected = await LocationService.detectCurrentLocation();
+      if (mounted) setState(() => _userLocation = detected);
+    } else {
+      if (mounted) setState(() => _userLocation = savedLoc);
+    }
+    _loadListings();
   }
 
   Future<void> _loadListings() async {
@@ -72,7 +77,7 @@ class _FeedScreenState extends State<FeedScreen> {
       result = result.where((l) => l.categoryId == _selectedCategory).toList();
     }
 
-    // Filter by Search (using LocalAiService natural language search helper)
+    // Filter by Search
     if (_searchQuery.trim().isNotEmpty) {
       result = await widget.aiService.searchListings(_searchQuery, result);
     }
@@ -85,17 +90,33 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  int get _savedCount => _allListings.where((l) => l.status == ListingStatus.saved).length;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textScaler = MediaQuery.textScalerOf(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Responsive columns (Matching Image 3 desktop grid vs mobile grid)
+    final crossAxisCount = screenWidth > 1100
+        ? 5
+        : screenWidth > 800
+            ? 4
+            : screenWidth > 550
+                ? 3
+                : 2;
 
     return Scaffold(
       appBar: BlinkitHeader(
-        currentNeighborhood: _userNeighborhood,
+        currentNeighborhood: _userLocation,
+        savedCount: _savedCount,
+        onSearchChanged: (val) {
+          _searchQuery = val;
+          _applyFilters();
+        },
         onLocationChanged: (newLoc) {
           setState(() {
-            _userNeighborhood = newLoc;
+            _userLocation = newLoc;
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -113,156 +134,49 @@ class _FeedScreenState extends State<FeedScreen> {
               color: BlinkitTheme.blinkitGreen,
               child: CustomScrollView(
                 slivers: [
-                  // Hero LocalHive Express Banner
+                  // Category Chips & Filter Bar
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFF9E6), Color(0xE8F7EEFF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: BlinkitTheme.blinkitYellow),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: BlinkitTheme.blinkitYellow,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text(
-                                      '⚡ 8 MINS LOCAL BOARD',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w900,
-                                        color: BlinkitTheme.blinkitGreen,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '$_userNeighborhood Market',
-                                    style: TextStyle(
-                                      fontSize: textScaler.scale(16),
-                                      fontWeight: FontWeight.w900,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${_allListings.length} verified listings nearby • 100% Private',
-                                    style: TextStyle(
-                                      fontSize: textScaler.scale(12),
-                                      color: const Color(0xFF475569),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: 'Neighborhood Activity Pulse',
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PulseScreen(
-                                      repository: widget.repository,
-                                      aiService: widget.aiService,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const CircleAvatar(
-                                backgroundColor: BlinkitTheme.blinkitGreen,
-                                child: Icon(Icons.show_chart, color: Colors.white, size: 18),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Search Bar Input
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Semantics(
-                        label: 'Search listings by keyword or phrase',
-                        textField: true,
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (val) {
-                            _searchQuery = val;
-                            _applyFilters();
-                          },
-                          decoration: InputDecoration(
-                            hintText: "Search 'tiffin', 'tutor', 'books', 'plumber'...",
-                            prefixIcon: const Icon(Icons.search, color: BlinkitTheme.blinkitYellow, size: 18),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear, size: 18),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      _searchQuery = '';
-                                      _applyFilters();
-                                    },
-                                  )
-                                : null,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                            filled: true,
-                            fillColor: isDark ? BlinkitTheme.darkElevated : const Color(0xFFEDF1F7),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Type Toggle Pills (All / Offers / Requests)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                       child: Row(
                         children: [
                           _buildTypeChip('All', null),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 8),
                           _buildTypeChip('📤 Offers', ListingType.offer),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 8),
                           _buildTypeChip('📥 Requests', ListingType.request),
                           const Spacer(),
-                          // Navigation to Settings
-                          Semantics(
-                            label: 'App Settings & Security Posture',
-                            button: true,
-                            child: IconButton(
-                              icon: const Icon(Icons.settings, size: 18),
-                              onPressed: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SettingsScreen(
-                                      repository: widget.repository,
-                                      aiService: widget.aiService,
-                                    ),
+                          // Neighborhood Pulse Analytics
+                          IconButton(
+                            tooltip: 'Neighborhood Activity Pulse',
+                            icon: const Icon(Icons.show_chart, color: BlinkitTheme.blinkitGreen),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PulseScreen(
+                                    repository: widget.repository,
+                                    aiService: widget.aiService,
                                   ),
-                                );
-                                _loadListings();
-                              },
-                            ),
+                                ),
+                              );
+                            },
+                          ),
+                          // Settings
+                          IconButton(
+                            icon: const Icon(Icons.settings, size: 20),
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SettingsScreen(
+                                    repository: widget.repository,
+                                    aiService: widget.aiService,
+                                  ),
+                                ),
+                              );
+                              _loadListings();
+                            },
                           ),
                         ],
                       ),
@@ -280,9 +194,40 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-                  // Dense 2-Column Listing Card Grid (Blinkit Style with Image Thumbnails)
+                  // Category Section Header (Matching Image 3: Category Title + "see all")
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _selectedCategory == 'all'
+                                ? 'Nearby Items & Services in $_userLocation'
+                                : '${ListingCategory.getById(_selectedCategory).icon} ${ListingCategory.getById(_selectedCategory).name}',
+                            style: TextStyle(
+                              fontFamily: 'Sora',
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          Text(
+                            'see all (${_filteredListings.length})',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: BlinkitTheme.blinkitGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Compact Product Grid (Matching Image 3 Blinkit reference grid)
                   _filteredListings.isEmpty
                       ? SliverFillRemaining(
                           hasScrollBody: false,
@@ -292,23 +237,17 @@ class _FeedScreenState extends State<FeedScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Text('🔍', style: TextStyle(fontSize: 40)),
-                                  const SizedBox(height: 10),
-                                  Text(
+                                  const Text('🔍', style: TextStyle(fontSize: 44)),
+                                  const SizedBox(height: 12),
+                                  const Text(
                                     'No matching listings found',
-                                    style: TextStyle(
-                                      fontSize: textScaler.scale(15),
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Try adjusting your search or category filter for $_userNeighborhood.',
+                                    'Try adjusting your search or location for $_userLocation.',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: textScaler.scale(12),
-                                      color: isDark ? Colors.white60 : Colors.black54,
-                                    ),
+                                    style: const TextStyle(color: Colors.grey),
                                   ),
                                 ],
                               ),
@@ -318,11 +257,11 @@ class _FeedScreenState extends State<FeedScreen> {
                       : SliverPadding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           sliver: SliverGrid(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 10,
-                              crossAxisSpacing: 10,
-                              childAspectRatio: 0.72,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.68, // Compact vertical card ratio
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
@@ -354,33 +293,29 @@ class _FeedScreenState extends State<FeedScreen> {
               ),
             ),
       // Prominent Floating Action Button "+ Post"
-      floatingActionButton: Semantics(
-        label: 'Create new listing or request in $_userNeighborhood',
-        button: true,
-        child: SizedBox(
-          width: 110,
-          height: 44,
-          child: FloatingActionButton.extended(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CreateScreen(
-                    repository: widget.repository,
-                    aiService: widget.aiService,
-                  ),
+      floatingActionButton: SizedBox(
+        width: 110,
+        height: 46,
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CreateScreen(
+                  repository: widget.repository,
+                  aiService: widget.aiService,
                 ),
-              );
-              _loadListings();
-            },
-            icon: const Icon(Icons.add, fontWeight: FontWeight.bold, size: 18),
-            label: const Text(
-              '+ Post',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
               ),
+            );
+            _loadListings();
+          },
+          icon: const Icon(Icons.add, fontWeight: FontWeight.bold, size: 18),
+          label: const Text(
+            '+ Post',
+            style: TextStyle(
+              fontFamily: 'Sora',
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
             ),
           ),
         ),
@@ -390,32 +325,27 @@ class _FeedScreenState extends State<FeedScreen> {
 
   Widget _buildTypeChip(String label, ListingType? type) {
     final isSelected = _selectedTypeFilter == type;
-    return Semantics(
-      label: 'Filter by $label',
-      button: true,
-      selected: isSelected,
-      child: InkWell(
-        onTap: () {
-          setState(() => _selectedTypeFilter = type);
-          _applyFilters();
-        },
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: isSelected ? BlinkitTheme.blinkitGreen : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected ? BlinkitTheme.blinkitGreen : Colors.grey.withOpacity(0.4),
-            ),
+    return InkWell(
+      onTap: () {
+        setState(() => _selectedTypeFilter = type);
+        _applyFilters();
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? BlinkitTheme.blinkitGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? BlinkitTheme.blinkitGreen : Colors.grey.withOpacity(0.4),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: isSelected ? Colors.white : null,
-            ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: isSelected ? Colors.white : null,
           ),
         ),
       ),

@@ -1101,6 +1101,7 @@ file:///Users/peeyush/Developer/mal-local/lib/domain/models/category.dart
 file:///Users/peeyush/Developer/mal-local/lib/domain/models/listing.dart
 file:///Users/peeyush/Developer/mal-local/lib/domain/services/deterministic_ai_service.dart
 file:///Users/peeyush/Developer/mal-local/lib/domain/services/local_ai_service.dart
+file:///Users/peeyush/Developer/mal-local/lib/domain/services/location_service.dart
 file:///Users/peeyush/Developer/mal-local/lib/main.dart
 file:///Users/peeyush/Developer/mal-local/lib/presentation/screens/create_screen.dart
 file:///Users/peeyush/Developer/mal-local/lib/presentation/screens/details_screen.dart
