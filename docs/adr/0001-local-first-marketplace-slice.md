@@ -1,31 +1,28 @@
-# ADR 0001: Local-First Marketplace Slice
+# ADR 0001: Local-First Flutter Marketplace Slice
 
 ## Status
 Accepted
 
 ## Context
-Building a hyperlocal marketplace for one neighborhood (MAL Lab 1 homework context), which needs to work offline, demonstrate clear architecture boundaries, and respect user privacy.
+Building a hyperlocal marketplace for one neighborhood (Bandra West) as part of the MAL Lab 1 homework assignment. The application must work local-first, enforce clear architectural boundaries, protect user privacy, and operate offline.
 
 ## Decision
-1. **Local-first storage with IndexedDB**: Chose IndexedDB for persistent, structured, offline storage. Data never leaves the browser. Wrapped behind ListingRepository interface for swappability.
-2. **Repository pattern for storage boundary**: ListingRepository provides clean CRUD interface. IndexedDbAdapter handles the actual persistence. Can be swapped for SQLite, remote API, or CRDTs without changing business logic.
-3. **Product logic isolation**: Domain models (Listing, Neighborhood) contain validation and business rules. UI components consume models via repository — no direct storage access.
-4. **AI service boundary**: LocalAiService isolates all AI behavior. Two implementations behind it: LocalModelAdapter (browser AI) and DeterministicFallback (templates). UI only knows about LocalAiService.suggestDescription().
-5. **Hash-based SPA routing**: Simple client-side router using URL hash. No server required. Enables deep-linking to listing details.
-6. **Vanilla JS with Vite**: Minimal dependencies. Only Vite as dev dependency. No framework lock-in. Demonstrates architecture patterns without framework magic.
+1. **Local-first Flutter Architecture**: Built with Flutter (Dart 3) targeting desktop, web, and mobile. All data stays local on-device.
+2. **Repository Storage Boundary**: Storage accessed strictly behind `ListingRepository` abstract interface. Implemented via `LocalListingRepository` using `SharedPreferences` + JSON persistence. Can be swapped for `Hive`, `sqflite`, or `drift` without modifying UI widgets.
+3. **Product Logic Isolation**: Domain models (`Listing`, `ListingCategory`, `ValidationResult`) encapsulate validation rules and self-expiry tracking logic (`isClosingSoon`).
+4. **Local AI Service Boundary**: AI features isolated behind `LocalAiService` interface (`suggestListingDetails`, `searchListings`, `checkListingSafety`). Real deterministic fallback path (`DeterministicAiService`) guarantees zero network API dependency.
+5. **Configurable Neighborhood**: Neighborhood name ("Bandra West") is configured in `AppConfig` rather than hardcoded.
 
 ## Consequences
-- **Positive**: 
-  - Complete offline capabilities and privacy by default.
-  - Clear architectural boundaries allow easy swaps of underlying technologies.
-  - Zero cloud infrastructure costs.
+- **Positive**:
+  - Complete offline functionality; zero cloud server costs or latencies.
+  - Clear layer isolation (UI → Service/Repository → Storage/AI).
+  - High accessibility compliance using `Semantics` widgets and non-color-only form errors.
 - **Negative**:
-  - Data doesn't sync across user devices.
-  - Users can lose data if they clear browser storage.
+  - Data does not sync across multiple devices of the same user.
+  - Clearing app cache or local storage wipes data unless backed up.
 
 ## Future Change Points
-- Storage: Replace IndexedDbAdapter with a remote API adapter for sync
-- AI: Replace LocalModelAdapter with a more capable local model (WebLLM, transformers.js)
-- Sync: Add CRDT or operational transform layer above ListingRepository
-- Auth: Add user identity above the product logic layer
-- Platform: Port UI components to React Native, Flutter, or native — domain models and repository interface stay the same
+- Storage: Swap `LocalListingRepository` with SQLite (`sqflite`/`drift`) or remote REST sync.
+- AI: Wire on-device Gemma weights via `flutter_gemma` while keeping fallback active.
+- Auth & Sync: Add CRDT sync engine and local device key pair auth above repository layer.
