@@ -25,6 +25,7 @@ class Listing {
   final DateTime updatedAt;
   final bool aiGenerated;
   final int expiryDays; // Original Feature: Closing soon self-expiry tracking
+  final String? imageUrl; // Visual image for the help / listing provided
 
   Listing({
     required this.id,
@@ -35,11 +36,12 @@ class Listing {
     required this.area,
     this.contactPreference = ContactPreference.whatsapp,
     this.status = ListingStatus.active,
-    this.neighborhoodId = AppConfig.defaultNeighborhoodId,
+    this.neighborhoodId = AppConfig.defaultNeighborhoodName,
     DateTime? createdAt,
     DateTime? updatedAt,
     this.aiGenerated = false,
-    this.expiryDays = 7, // Self-expires in 7 days by default
+    this.expiryDays = 7,
+    this.imageUrl,
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
@@ -113,6 +115,7 @@ class Listing {
     DateTime? updatedAt,
     bool? aiGenerated,
     int? expiryDays,
+    String? imageUrl,
   }) {
     return Listing(
       id: id ?? this.id,
@@ -128,6 +131,7 @@ class Listing {
       updatedAt: updatedAt ?? DateTime.now(),
       aiGenerated: aiGenerated ?? this.aiGenerated,
       expiryDays: expiryDays ?? this.expiryDays,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -146,6 +150,7 @@ class Listing {
       'updatedAt': updatedAt.toIso8601String(),
       'aiGenerated': aiGenerated,
       'expiryDays': expiryDays,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -168,11 +173,12 @@ class Listing {
         (e) => e.name == map['status'],
         orElse: () => ListingStatus.active,
       ),
-      neighborhoodId: map['neighborhoodId'] ?? AppConfig.defaultNeighborhoodId,
+      neighborhoodId: map['neighborhoodId'] ?? AppConfig.defaultNeighborhoodName,
       createdAt: DateTime.tryParse(map['createdAt'] ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(map['updatedAt'] ?? '') ?? DateTime.now(),
       aiGenerated: map['aiGenerated'] ?? false,
       expiryDays: map['expiryDays'] ?? 7,
+      imageUrl: map['imageUrl'],
     );
   }
 }

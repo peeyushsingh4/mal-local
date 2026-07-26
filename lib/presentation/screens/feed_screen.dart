@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_config.dart';
 import '../../domain/models/listing.dart';
 import '../../domain/services/local_ai_service.dart';
 import '../../repository/listing_repository.dart';
@@ -30,8 +31,9 @@ class _FeedScreenState extends State<FeedScreen> {
   List<Listing> _filteredListings = [];
   bool _isLoading = true;
 
+  String _userNeighborhood = AppConfig.defaultNeighborhoodName;
   String _selectedCategory = 'all';
-  ListingType? _selectedTypeFilter; // null = all, offer, request
+  ListingType? _selectedTypeFilter;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -90,11 +92,16 @@ class _FeedScreenState extends State<FeedScreen> {
 
     return Scaffold(
       appBar: BlinkitHeader(
-        onLocationTap: () {
+        currentNeighborhood: _userNeighborhood,
+        onLocationChanged: (newLoc) {
+          setState(() {
+            _userNeighborhood = newLoc;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Configured Neighborhood: Bandra West, Mumbai'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text('📍 Location updated to $newLoc'),
+              backgroundColor: BlinkitTheme.blinkitGreen,
+              duration: const Duration(seconds: 2),
             ),
           );
         },
@@ -106,7 +113,7 @@ class _FeedScreenState extends State<FeedScreen> {
               color: BlinkitTheme.blinkitGreen,
               child: CustomScrollView(
                 slivers: [
-                  // Hero Blinkit Express Banner
+                  // Hero LocalHive Express Banner
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -144,7 +151,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Bandra West Neighborhood Market',
+                                    '$_userNeighborhood Market',
                                     style: TextStyle(
                                       fontSize: textScaler.scale(16),
                                       fontWeight: FontWeight.w900,
@@ -153,7 +160,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${_allListings.length} listings nearby • 100% On-Device & Private',
+                                    '${_allListings.length} verified listings nearby • 100% Private',
                                     style: TextStyle(
                                       fontSize: textScaler.scale(12),
                                       color: const Color(0xFF475569),
@@ -177,7 +184,7 @@ class _FeedScreenState extends State<FeedScreen> {
                               },
                               icon: const CircleAvatar(
                                 backgroundColor: BlinkitTheme.blinkitGreen,
-                                child: Icon(Icons.show_chart, color: Colors.white),
+                                child: Icon(Icons.show_chart, color: Colors.white, size: 18),
                               ),
                             ),
                           ],
@@ -186,7 +193,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   ),
 
-                  // Search Bar Input (Natural Language AI Search Helper)
+                  // Search Bar Input
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -201,10 +208,10 @@ class _FeedScreenState extends State<FeedScreen> {
                           },
                           decoration: InputDecoration(
                             hintText: "Search 'tiffin', 'tutor', 'books', 'plumber'...",
-                            prefixIcon: const Icon(Icons.search, color: BlinkitTheme.blinkitYellow),
+                            prefixIcon: const Icon(Icons.search, color: BlinkitTheme.blinkitYellow, size: 18),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
-                                    icon: const Icon(Icons.clear),
+                                    icon: const Icon(Icons.clear, size: 18),
                                     onPressed: () {
                                       _searchController.clear();
                                       _searchQuery = '';
@@ -212,7 +219,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                     },
                                   )
                                 : null,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 10),
                             filled: true,
                             fillColor: isDark ? BlinkitTheme.darkElevated : const Color(0xFFEDF1F7),
                             border: OutlineInputBorder(
@@ -228,13 +235,13 @@ class _FeedScreenState extends State<FeedScreen> {
                   // Type Toggle Pills (All / Offers / Requests)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
                       child: Row(
                         children: [
                           _buildTypeChip('All', null),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           _buildTypeChip('📤 Offers', ListingType.offer),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           _buildTypeChip('📥 Requests', ListingType.request),
                           const Spacer(),
                           // Navigation to Settings
@@ -242,7 +249,7 @@ class _FeedScreenState extends State<FeedScreen> {
                             label: 'App Settings & Security Posture',
                             button: true,
                             child: IconButton(
-                              icon: const Icon(Icons.settings, size: 20),
+                              icon: const Icon(Icons.settings, size: 18),
                               onPressed: () async {
                                 await Navigator.push(
                                   context,
@@ -273,9 +280,9 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
-                  // Dense 2-Column Listing Card Grid (Blinkit Style)
+                  // Dense 2-Column Listing Card Grid (Blinkit Style with Image Thumbnails)
                   _filteredListings.isEmpty
                       ? SliverFillRemaining(
                           hasScrollBody: false,
@@ -285,21 +292,21 @@ class _FeedScreenState extends State<FeedScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Text('🔍', style: TextStyle(fontSize: 48)),
-                                  const SizedBox(height: 12),
+                                  const Text('🔍', style: TextStyle(fontSize: 40)),
+                                  const SizedBox(height: 10),
                                   Text(
                                     'No matching listings found',
                                     style: TextStyle(
-                                      fontSize: textScaler.scale(16),
+                                      fontSize: textScaler.scale(15),
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Try adjusting your search or category filter for Bandra West.',
+                                    'Try adjusting your search or category filter for $_userNeighborhood.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      fontSize: textScaler.scale(13),
+                                      fontSize: textScaler.scale(12),
                                       color: isDark ? Colors.white60 : Colors.black54,
                                     ),
                                   ),
@@ -313,9 +320,9 @@ class _FeedScreenState extends State<FeedScreen> {
                           sliver: SliverGrid(
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 0.64, // Dense card aspect ratio
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 0.72,
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
@@ -348,11 +355,11 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
       // Prominent Floating Action Button "+ Post"
       floatingActionButton: Semantics(
-        label: 'Create new listing or request in Bandra West',
+        label: 'Create new listing or request in $_userNeighborhood',
         button: true,
         child: SizedBox(
-          width: 120,
-          height: 48,
+          width: 110,
+          height: 44,
           child: FloatingActionButton.extended(
             onPressed: () async {
               await Navigator.push(
@@ -366,13 +373,13 @@ class _FeedScreenState extends State<FeedScreen> {
               );
               _loadListings();
             },
-            icon: const Icon(Icons.add, fontWeight: FontWeight.bold),
+            icon: const Icon(Icons.add, fontWeight: FontWeight.bold, size: 18),
             label: const Text(
               '+ Post',
               style: TextStyle(
                 fontFamily: 'Sora',
                 fontWeight: FontWeight.w900,
-                fontSize: 15,
+                fontSize: 14,
               ),
             ),
           ),
@@ -392,12 +399,12 @@ class _FeedScreenState extends State<FeedScreen> {
           setState(() => _selectedTypeFilter = type);
           _applyFilters();
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: isSelected ? BlinkitTheme.blinkitGreen : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected ? BlinkitTheme.blinkitGreen : Colors.grey.withOpacity(0.4),
             ),
@@ -405,7 +412,7 @@ class _FeedScreenState extends State<FeedScreen> {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               color: isSelected ? Colors.white : null,
             ),

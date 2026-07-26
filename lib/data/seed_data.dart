@@ -15,6 +15,7 @@ List<Listing> getSeedListings() {
       createdAt: now.subtract(const Duration(hours: 3)),
       aiGenerated: true,
       expiryDays: 5,
+      imageUrl: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-2',
@@ -27,6 +28,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.active,
       createdAt: now.subtract(const Duration(hours: 6)),
       expiryDays: 7,
+      imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-3',
@@ -39,6 +41,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.saved,
       createdAt: now.subtract(const Duration(days: 1)),
       expiryDays: 10,
+      imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-4',
@@ -51,6 +54,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.active,
       createdAt: now.subtract(const Duration(days: 1, hours: 4)),
       expiryDays: 14,
+      imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-5',
@@ -63,6 +67,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.contacted,
       createdAt: now.subtract(const Duration(days: 2)),
       expiryDays: 3,
+      imageUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-6',
@@ -75,6 +80,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.active,
       createdAt: now.subtract(const Duration(days: 2, hours: 8)),
       expiryDays: 2,
+      imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-7',
@@ -87,6 +93,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.active,
       createdAt: now.subtract(const Duration(days: 3)),
       expiryDays: 30,
+      imageUrl: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-8',
@@ -99,6 +106,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.active,
       createdAt: now.subtract(const Duration(days: 3, hours: 12)),
       expiryDays: 12,
+      imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-9',
@@ -111,6 +119,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.closed,
       createdAt: now.subtract(const Duration(days: 4)),
       expiryDays: 1,
+      imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&auto=format&fit=crop&q=80',
     ),
     Listing(
       id: 'seed-10',
@@ -123,6 +132,7 @@ List<Listing> getSeedListings() {
       status: ListingStatus.active,
       createdAt: now.subtract(const Duration(days: 5)),
       expiryDays: 14,
+      imageUrl: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&auto=format&fit=crop&q=80',
     ),
   ];
 }

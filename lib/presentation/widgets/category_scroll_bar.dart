@@ -28,12 +28,12 @@ class CategoryScrollBar extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 48,
+      height: 38,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
         itemBuilder: (context, index) {
           final cat = categories[index];
           final isSelected = selectedCategoryId == cat.id;
@@ -44,39 +44,30 @@ class CategoryScrollBar extends StatelessWidget {
             selected: isSelected,
             child: InkWell(
               onTap: () => onSelectCategory(cat.id),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? BlinkitTheme.blinkitYellow
                       : (isDark ? BlinkitTheme.darkElevated : Colors.white),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
                         ? BlinkitTheme.blinkitYellow
                         : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                    width: isSelected ? 2 : 1,
+                    width: isSelected ? 1.5 : 1,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: BlinkitTheme.blinkitYellow.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
                 ),
                 child: Row(
                   children: [
-                    Text(cat.icon, style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 6),
+                    Text(cat.icon, style: const TextStyle(fontSize: 12)),
+                    const SizedBox(width: 5),
                     Text(
                       cat.name,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 11.5,
                         fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
                         color: isSelected
                             ? const Color(0xFF0C831F)

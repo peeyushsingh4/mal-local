@@ -5,17 +5,17 @@ import 'package:mal_local/repository/local_listing_repository.dart';
 import 'package:mal_local/domain/services/deterministic_ai_service.dart';
 
 void main() {
-  testWidgets('App loads cleanly', (WidgetTester tester) async {
+  testWidgets('LocalHive App loads cleanly', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final repo = LocalListingRepository(prefs);
     final aiService = DeterministicAiService();
 
-    await tester.pumpWidget(MalLocalApp(
+    await tester.pumpWidget(LocalHiveApp(
       repository: repo,
       aiService: aiService,
     ));
 
-    expect(find.text('MAL LOCAL'), findsOneWidget);
+    expect(find.text('LocalHive'), findsOneWidget);
   });
 }

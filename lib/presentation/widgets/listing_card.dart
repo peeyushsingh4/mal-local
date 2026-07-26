@@ -46,9 +46,8 @@ class ListingCard extends StatelessWidget {
     final statusColor = _getStatusColor(listing.status);
     final isOffer = listing.type == ListingType.offer;
 
-    // Composed semantic label for screen reader accessibility
     final composedSemanticLabel =
-        'Listing: ${listing.title}. Category: ${cat.name}. Type: ${isOffer ? "Offer" : "Request"}. Area: ${listing.area}. Status: ${_getStatusLabel(listing.status)}. ${listing.isClosingSoon ? "Closing soon in ${listing.daysRemaining} days" : ""}';
+        'Listing: ${listing.title}. Category: ${cat.name}. Type: ${isOffer ? "Offer" : "Request"}. Area: ${listing.area}. Status: ${_getStatusLabel(listing.status)}.';
 
     return Semantics(
       label: composedSemanticLabel,
@@ -57,200 +56,209 @@ class ListingCard extends StatelessWidget {
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           side: BorderSide(
             color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
           ),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Tag Bar: Delivery Speed + Category Pill
-                Row(
-                  children: [
-                    Container(
+          borderRadius: BorderRadius.circular(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Image / Visual Thumbnail Container for Help Provided
+              Stack(
+                children: [
+                  Container(
+                    height: 84,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: cat.bgTint,
+                    ),
+                    child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
+                        ? Image.network(
+                            listing.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Center(
+                              child: Text(cat.icon, style: const TextStyle(fontSize: 32)),
+                            ),
+                          )
+                        : Center(
+                            child: Text(cat.icon, style: const TextStyle(fontSize: 32)),
+                          ),
+                  ),
+
+                  // Overlay Category Pill
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF9E6),
-                        border: Border.all(color: const Color(0xFFF7C413)),
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.black.withOpacity(0.65),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        '⚡ 8 MINS',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFFD4A300),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: cat.bgTint,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: cat.color.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          '${cat.icon} ${cat.name}',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            color: cat.color,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // Title
-                Text(
-                  listing.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    height: 1.25,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Description
-                Text(
-                  listing.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    height: 1.3,
-                  ),
-                ),
-                const Spacer(),
-
-                // Closing Soon Warning Pill (Original Feature: Self-expiry tracking)
-                if (listing.isClosingSoon)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: BlinkitTheme.zomatoRed.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: BlinkitTheme.zomatoRed.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.timer, size: 10, color: BlinkitTheme.zomatoRed),
-                        const SizedBox(width: 3),
-                        Text(
-                          'Closing in ${listing.daysRemaining}d',
-                          style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: BlinkitTheme.zomatoRed,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Area & Offer/Request Pill
-                Row(
-                  children: [
-                    Expanded(
                       child: Text(
-                        '📍 ${listing.area}',
-                        overflow: TextOverflow.ellipsis,
+                        '${cat.icon} ${cat.name}',
                         style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: isOffer
-                            ? BlinkitTheme.blinkitGreen.withOpacity(0.12)
-                            : BlinkitTheme.zomatoRed.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        isOffer ? 'OFFER' : 'REQ',
-                        style: TextStyle(
                           fontSize: 8.5,
-                          fontWeight: FontWeight.w900,
-                          color: isOffer ? BlinkitTheme.blinkitGreen : BlinkitTheme.zomatoRed,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                  ),
 
-                // Bottom Action Bar (Status Badge + Blinkit ADD button)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Status Badge Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  // Overlay 8 MINS Badge
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: statusColor.withOpacity(0.3)),
-                      ),
-                      child: Text(
-                        _getStatusLabel(listing.status),
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: statusColor,
-                        ),
-                      ),
-                    ),
-
-                    // Blinkit ADD Button
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: BlinkitTheme.blinkitGreen.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.5),
+                        color: BlinkitTheme.blinkitYellow,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(Icons.bolt, size: 8, color: BlinkitTheme.blinkitGreen),
                           Text(
-                            'ADD',
+                            '8 MINS',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 8,
                               fontWeight: FontWeight.w900,
                               color: BlinkitTheme.blinkitGreen,
-                              letterSpacing: 0.5,
                             ),
                           ),
-                          SizedBox(width: 2),
-                          Icon(Icons.add, size: 12, color: BlinkitTheme.blinkitGreen),
                         ],
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+
+              // Card Content Area
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
+                        listing.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+
+                      // Description
+                      Text(
+                        listing.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          height: 1.2,
+                        ),
+                      ),
+                      const Spacer(),
+
+                      // Area & Offer/Request Tag
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '📍 ${listing.area}',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: isOffer
+                                  ? BlinkitTheme.blinkitGreen.withOpacity(0.12)
+                                  : BlinkitTheme.zomatoRed.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              isOffer ? 'OFFER' : 'REQ',
+                              style: TextStyle(
+                                fontSize: 7.5,
+                                fontWeight: FontWeight.w900,
+                                color: isOffer ? BlinkitTheme.blinkitGreen : BlinkitTheme.zomatoRed,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Bottom Action Bar (Status Pill + ADD Button)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Status Badge Pill
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: statusColor.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              _getStatusLabel(listing.status),
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w900,
+                                color: statusColor,
+                              ),
+                            ),
+                          ),
+
+                          // ADD Button
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: BlinkitTheme.blinkitGreen.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.2),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'ADD',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    color: BlinkitTheme.blinkitGreen,
+                                  ),
+                                ),
+                                SizedBox(width: 2),
+                                Icon(Icons.add, size: 10, color: BlinkitTheme.blinkitGreen),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

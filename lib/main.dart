@@ -21,17 +21,17 @@ void main() async {
   // Instantiate AI Service boundary
   final LocalAiService aiService = DeterministicAiService();
 
-  runApp(MalLocalApp(
+  runApp(LocalHiveApp(
     repository: repository,
     aiService: aiService,
   ));
 }
 
-class MalLocalApp extends StatelessWidget {
+class LocalHiveApp extends StatelessWidget {
   final ListingRepository repository;
   final LocalAiService aiService;
 
-  const MalLocalApp({
+  const LocalHiveApp({
     super.key,
     required this.repository,
     required this.aiService,
@@ -40,11 +40,11 @@ class MalLocalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MAL Local',
+      title: 'LocalHive',
       debugShowCheckedModeBanner: false,
       theme: BlinkitTheme.lightTheme,
       darkTheme: BlinkitTheme.darkTheme,
-      themeMode: ThemeMode.dark, // Default Blinkit Dark theme
+      themeMode: ThemeMode.dark, // Default Dark theme
       showSemanticsDebugger: false,
       home: FeedScreen(
         repository: repository,
