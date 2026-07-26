@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../domain/models/category.dart';
 import '../../domain/models/listing.dart';
@@ -22,9 +23,14 @@ class CheckoutSheet extends StatefulWidget {
 }
 
 class _CheckoutSheetState extends State<CheckoutSheet> {
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+  late TextEditingController _locationController;
+  late TextEditingController _noteController;
+
   String _selectedSlot = 'As soon as possible (8 mins)';
-  final TextEditingController _noteController = TextEditingController();
   bool _isConfirming = false;
+  Map<String, dynamic>? _confirmedOrderReceipt;
 
   final List<String> _timeSlots = [
     'As soon as possible (8 mins)',
@@ -34,105 +40,158 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: 'Resident Neighbor');
+    _phoneController = TextEditingController(text: '+91 98200 12345');
+    _locationController = TextEditingController(text: widget.userLocation);
+    _noteController = TextEditingController();
+  }
+
+  @override
   void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _locationController.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
   void _processCheckout() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final loc = _locationController.text.trim();
+
+    if (name.isEmpty || phone.isEmpty || loc.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill out Name, Phone, and Location'),
+          backgroundColor: BlinkitTheme.zomatoRed,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isConfirming = true);
-    await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted) return;
 
-    // Show Success Modal
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Column(
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: BlinkitTheme.blinkitGreenLight,
-              child: Icon(Icons.check_circle, color: BlinkitTheme.blinkitGreen, size: 40),
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Service Request Placed!',
-              style: TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w900, fontSize: 18),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Your request for ${widget.selectedListings.length} service(s) in ${widget.userLocation} has been sent to nearby providers.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: BlinkitTheme.blinkitYellow.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: BlinkitTheme.blinkitYellow),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Time Slot:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      Text(_selectedSlot, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: BlinkitTheme.blinkitGreen)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Location:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      Text(widget.userLocation, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: BlinkitTheme.blinkitGreen,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx); // Close dialog
-                Navigator.pop(context); // Close checkout sheet
-                widget.onClearCart();
-                widget.onOrderConfirmed();
-              },
-              child: const Text('Back to Home Board', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
-      ),
-    );
+    final bookingId = '#LH-${Random().nextInt(89999) + 10000}';
+    final receipt = {
+      'bookingId': bookingId,
+      'name': name,
+      'phone': phone,
+      'location': loc,
+      'slot': _selectedSlot,
+      'notes': _noteController.text.trim(),
+      'timestamp': DateTime.now(),
+      'services': widget.selectedListings.map((l) => l.title).toList(),
+    };
+
+    setState(() {
+      _isConfirming = false;
+      _confirmedOrderReceipt = receipt;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // If order confirmed, show Output Confirmation Receipt!
+    if (_confirmedOrderReceipt != null) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: CircleAvatar(
+                radius: 30,
+                backgroundColor: BlinkitTheme.blinkitGreenLight,
+                child: Icon(Icons.check_circle, color: BlinkitTheme.blinkitGreen, size: 44),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Center(
+              child: Text(
+                'Service Booking Confirmed!',
+                style: TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w900, fontSize: 18),
+              ),
+            ),
+            const Center(
+              child: Text(
+                'Your request has been dispatched to nearby local providers.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Detailed Output Receipt Box
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? BlinkitTheme.darkElevated : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: BlinkitTheme.blinkitGreen),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Booking ID:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text(
+                        _confirmedOrderReceipt!['bookingId'],
+                        style: const TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w900, color: BlinkitTheme.blinkitGreen),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 16),
+                  _buildReceiptRow('Customer Name:', _confirmedOrderReceipt!['name']),
+                  _buildReceiptRow('Contact Phone:', _confirmedOrderReceipt!['phone']),
+                  _buildReceiptRow('Service Address:', _confirmedOrderReceipt!['location']),
+                  _buildReceiptRow('Timing Slot:', _confirmedOrderReceipt!['slot']),
+                  if (_confirmedOrderReceipt!['notes'].toString().isNotEmpty)
+                    _buildReceiptRow('Instructions:', _confirmedOrderReceipt!['notes']),
+                  const SizedBox(height: 8),
+                  const Text('Requested Services:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  ...(_confirmedOrderReceipt!['services'] as List<String>).map((s) => Text('• $s', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: BlinkitTheme.blinkitGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onClearCart();
+                  widget.onOrderConfirmed();
+                },
+                child: const Text('Done · Return to Local Board', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
       padding: EdgeInsets.only(
         top: 20,
@@ -150,10 +209,10 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.shopping_bag_outlined, color: BlinkitTheme.blinkitGreen, size: 24),
+                  const Icon(Icons.shopping_cart, color: BlinkitTheme.blinkitGreen, size: 24),
                   const SizedBox(width: 8),
                   Text(
-                    'Service Checkout (${widget.selectedListings.length})',
+                    'Checkout (${widget.selectedListings.length} Service)',
                     style: const TextStyle(
                       fontFamily: 'Sora',
                       fontWeight: FontWeight.w900,
@@ -169,15 +228,14 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const Divider(),
 
           Expanded(
             child: ListView(
-              shrinkWrap: true,
               children: [
                 // Selected Services List
-                const Text('Selected Services & Items', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                const Text('Items & Services in Cart', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 8),
 
                 ...widget.selectedListings.map((item) {
@@ -193,13 +251,13 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                     child: Row(
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
                             color: cat.bgTint,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Center(child: Text(cat.icon, style: const TextStyle(fontSize: 20))),
+                          child: Center(child: Text(cat.icon, style: const TextStyle(fontSize: 18))),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -223,41 +281,61 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
 
                 const SizedBox(height: 16),
 
-                // Location Delivery Card
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: BlinkitTheme.blinkitYellow.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: BlinkitTheme.blinkitYellow),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on, color: BlinkitTheme.swiggyOrange, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Service Location', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-                            Text(widget.userLocation, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          ],
+                // Customer Details Section
+                const Text('Contact & Delivery Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _nameController,
+                        style: const TextStyle(fontSize: 12),
+                        decoration: InputDecoration(
+                          labelText: 'Your Name *',
+                          isDense: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _phoneController,
+                        style: const TextStyle(fontSize: 12),
+                        decoration: InputDecoration(
+                          labelText: 'Phone Number *',
+                          isDense: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Location Field
+                TextField(
+                  controller: _locationController,
+                  style: const TextStyle(fontSize: 12),
+                  decoration: InputDecoration(
+                    labelText: 'Delivery / Service Address *',
+                    isDense: true,
+                    prefixIcon: const Icon(Icons.location_on, size: 18, color: BlinkitTheme.swiggyOrange),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Preferred Timing Slot Dropdown
-                const Text('Preferred Service Timing', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
-                const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
-                  value: _selectedSlot,
+                  initialValue: _selectedSlot,
                   decoration: InputDecoration(
+                    labelText: 'Preferred Timing *',
                     isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   items: _timeSlots.map((slot) {
                     return DropdownMenuItem(
@@ -270,27 +348,26 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                   },
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-                // Special Notes Text Field
-                const Text('Notes / Specific Instructions (Optional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
-                const SizedBox(height: 6),
+                // Notes Field
                 TextField(
                   controller: _noteController,
                   maxLines: 2,
                   style: const TextStyle(fontSize: 12),
                   decoration: InputDecoration(
-                    hintText: 'e.g. Please bring extra tools / call before arrival',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    labelText: 'Instructions for Provider (Optional)',
+                    hintText: 'e.g. Please bring tools / call before coming',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
               ],
             ),
           ),
 
-          // Confirm Checkout Button
+          // Confirm Button
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -310,6 +387,19 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceiptRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         ],
       ),
     );

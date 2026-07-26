@@ -6,14 +6,16 @@ class BlinkitHeader extends StatefulWidget implements PreferredSizeWidget {
   final String currentNeighborhood;
   final ValueChanged<String> onLocationChanged;
   final ValueChanged<String>? onSearchChanged;
-  final int savedCount;
+  final int cartCount;
+  final VoidCallback onCartTap;
 
   const BlinkitHeader({
     super.key,
     required this.currentNeighborhood,
     required this.onLocationChanged,
     this.onSearchChanged,
-    this.savedCount = 0,
+    required this.cartCount,
+    required this.onCartTap,
   });
 
   @override
@@ -76,7 +78,7 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Button 1: Detect Current Location via Geolocation API (NO presaved locations!)
+                  // Button 1: Detect Current Location via Geolocation API
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -200,7 +202,7 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
 
             const SizedBox(width: 12),
 
-            // Location Header Block (Matching Image 3: "Delivery in 8 minutes \n Location ▾")
+            // Location Header Block ("Delivery in 8 minutes \n Location ▾")
             InkWell(
               onTap: () => _showLocationPicker(context),
               borderRadius: BorderRadius.circular(8),
@@ -274,26 +276,39 @@ class _BlinkitHeaderState extends State<BlinkitHeader> {
 
             const SizedBox(width: 10),
 
-            // Saved Items / Account Pill (Right)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: BlinkitTheme.blinkitGreen,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.bookmark, size: 14, color: Colors.white),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${widget.savedCount} Saved',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11,
-                      color: Colors.white,
+            // Top Right Interactive Cart / Checkout Button (Green Blinkit Badge)
+            InkWell(
+              onTap: widget.onCartTap,
+              borderRadius: BorderRadius.circular(8),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: widget.cartCount > 0 ? BlinkitTheme.blinkitGreen : (isDark ? BlinkitTheme.darkElevated : const Color(0xFFE2E8F0)),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: widget.cartCount > 0
+                      ? [BoxShadow(color: BlinkitTheme.blinkitGreen.withOpacity(0.4), blurRadius: 6, offset: const Offset(0, 2))]
+                      : [],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.shopping_cart,
+                      size: 16,
+                      color: widget.cartCount > 0 ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.cartCount > 0 ? '${widget.cartCount} Cart' : '0 Cart',
+                      style: TextStyle(
+                        fontFamily: 'Sora',
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                        color: widget.cartCount > 0 ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

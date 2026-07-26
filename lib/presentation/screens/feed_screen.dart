@@ -94,23 +94,42 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-  int get _savedCount => _allListings.where((l) => l.status == ListingStatus.saved).length;
-
   List<Listing> get _selectedCartListings =>
       _allListings.where((l) => _cartListingIds.contains(l.id)).toList();
 
-  void _toggleCart(String listingId) {
+  void _toggleCart(Listing listing) {
     setState(() {
-      if (_cartListingIds.contains(listingId)) {
-        _cartListingIds.remove(listingId);
+      if (_cartListingIds.contains(listing.id)) {
+        _cartListingIds.remove(listing.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Removed "${listing.title}" from Cart'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
       } else {
-        _cartListingIds.add(listingId);
+        _cartListingIds.add(listing.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🛒 Added "${listing.title}" to Cart!'),
+            backgroundColor: BlinkitTheme.blinkitGreen,
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     });
   }
 
   void _openCheckoutModal() {
-    if (_cartListingIds.isEmpty) return;
+    if (_cartListingIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your cart is empty! Tap ADD on any service below to add it to your cart.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
 
     showModalBottomSheet(
       context: context,
@@ -137,7 +156,6 @@ class _FeedScreenState extends State<FeedScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Responsive grid columns & tight aspect ratio (Eliminates empty black space!)
     final crossAxisCount = screenWidth > 1100
         ? 5
         : screenWidth > 800
@@ -146,13 +164,13 @@ class _FeedScreenState extends State<FeedScreen> {
                 ? 3
                 : 2;
 
-    // Compact card aspect ratio (0.85 on mobile, 0.90 on desktop -> No tall empty black space!)
     final childAspectRatio = screenWidth > 800 ? 0.92 : 0.84;
 
     return Scaffold(
       appBar: BlinkitHeader(
         currentNeighborhood: _userLocation,
-        savedCount: _savedCount,
+        cartCount: _cartListingIds.length,
+        onCartTap: _openCheckoutModal,
         onSearchChanged: (val) {
           _searchQuery = val;
           _applyFilters();
@@ -239,24 +257,28 @@ class _FeedScreenState extends State<FeedScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-                  // Category Section Header
+                  // Category Section Header (Wrapped with Expanded to prevent text overflow)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            _selectedCategory == 'all'
-                                ? 'Nearby Services & Items in $_userLocation'
-                                : '${ListingCategory.getById(_selectedCategory).icon} ${ListingCategory.getById(_selectedCategory).name}',
-                            style: TextStyle(
-                              fontFamily: 'Sora',
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          Expanded(
+                            child: Text(
+                              _selectedCategory == 'all'
+                                  ? 'Nearby Services & Items in $_userLocation'
+                                  : '${ListingCategory.getById(_selectedCategory).icon} ${ListingCategory.getById(_selectedCategory).name}',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Sora',
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             'see all (${_filteredListings.length})',
                             style: const TextStyle(
@@ -270,7 +292,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   ),
 
-                  // Compact Grid (Reduced height childAspectRatio: 0.84 -> Zero empty black space!)
+                  // Compact Grid
                   _filteredListings.isEmpty
                       ? SliverFillRemaining(
                           hasScrollBody: false,
@@ -313,7 +335,7 @@ class _FeedScreenState extends State<FeedScreen> {
                                 return ListingCard(
                                   listing: listing,
                                   isAdded: isAdded,
-                                  onAddTap: () => _toggleCart(listing.id),
+                                  onAddTap: () => _toggleCart(listing),
                                   onTap: () async {
                                     await Navigator.push(
                                       context,
@@ -353,28 +375,33 @@ class _FeedScreenState extends State<FeedScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${_cartListingIds.length} Service(s) Selected',
-                          style: const TextStyle(
-                            fontFamily: 'Sora',
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            fontSize: 14,
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_cartListingIds.length} Service(s) Selected',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Sora',
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '📍 $_userLocation • Free Checkout',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11,
+                          Text(
+                            '📍 $_userLocation • Free Checkout',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: BlinkitTheme.blinkitYellow,
