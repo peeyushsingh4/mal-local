@@ -4,6 +4,27 @@
 
 ---
 
+## 🎨 Blinkit App UI/UX Redesign
+
+- **Blinkit Header & Location Bar**: Features the iconic **`blinkit`** logo badge with dynamic **`⚡ 8 MINS`** delivery pill and **`📍 Bandra West, Mumbai ▾`** location picker.
+- **Hero Express Banner & Real-time Search**: High-impact banner + instant search bar (`🔍 Search tiffins, tutors, plumbers, books, electronics in Bandra West...`).
+- **Story Category Scroll Grid**: Category pills with custom SVG icons (`🍱 Food`, `🔧 Services`, `📦 Goods`, `🤝 Lending`, `🙏 Requests`, `🎓 Skills`).
+- **Blinkit Product Cards**: Cards with high-visibility **`ADD +`** green action buttons, time tags, category tints, and quick contact action buttons.
+
+---
+
+## 🔒 Security ADR 0002: "The Walking Skeleton Has No Skin"
+
+Implemented formal Security ADR ([`docs/adr/0002-security-skeleton-stance.md`](docs/adr/0002-security-skeleton-stance.md)) covering the 5 Skeleton-Stage Decisions from the MAL Lab 01 Security ADR specification:
+
+1. **Where do your secrets live?** Zero hardcoded API keys, tokens, or private secrets inside binary/bundle. `LocalAiService` uses browser-native LLM (`window.ai`) or `DeterministicFallback`.
+2. **Where is the client/server trust boundary?** Client treated as hostile; HTML sanitization + domain model validation enforced on-device. Server re-validation mandated for backend sync.
+3. **Is data-at-rest encrypted — and where's the key?** Browser IndexedDB origin-isolated by SOP. Data minimized to neighborhood areas ("Pali Hill", "Carter Road"). 1-click **Data Reset** in Settings.
+4. **What is your certificate-pinning stance?** Explicitly deferred for offline local slice; stance recorded for future HTTPS endpoints.
+5. **What telemetry leaves the device?** **Zero telemetry / Zero PII exfiltration**.
+
+---
+
 ## Technical Stack & Choices
 
 | Area | Choice & Description |
@@ -13,7 +34,7 @@
 | **Framework** | None — Vanilla JS with Vite as dev server and build bundler |
 | **Local Storage** | IndexedDB (wrapped behind `ListingRepository` boundary pattern) |
 | **Local AI** | `LocalAiService` interface with `DeterministicFallback` (zero hosted API keys required) |
-| **Styling** | Vanilla CSS (Swiggy / Blinkit / Zomato aesthetic with Dark and Light mode support) |
+| **Styling** | Vanilla CSS (Blinkit Yellow `#F7C413`, Blinkit Green `#0C831F` & Swiggy/Zomato palette) |
 
 ---
 
@@ -22,7 +43,7 @@
 ### Prerequisites
 - Node.js 18+
 
-### Setup Commands
+### Commands
 ```bash
 # Install dependencies
 npm install
@@ -45,20 +66,20 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 Follow this script during reviewer evaluation:
 
-1. **Open the App** (`http://localhost:5173/`): The main feed loads instantly with Bandra West seed listings.
-2. **Instant Search & Filter**: Type "tiffin" in the top search bar or click the **🍱 Food** category pill to filter listings in real-time.
-3. **View Listing Details**: Click any listing card (e.g., *"Home-cooked Maharashtrian Tiffin"*) to open details page.
+1. **Open the App** (`http://localhost:5173/`): Notice the **`blinkit`** logo, **`⚡ 8 MINS`** delivery badge, and location picker (`Bandra West, Mumbai`).
+2. **Instant Search & Filter**: Type "tiffin" in the search input or click **🍱 Food & Tiffin** category pill.
+3. **View Listing Details**: Click any card (e.g., *"Home-cooked Maharashtrian Tiffin Packs"*) to open details page.
 4. **Update Status**: Click **★ Save** or **✉ Mark Contacted**. Notice the badge updates immediately.
 5. **Create a Listing with AI Helper**: 
    - Click **➕ Create Listing** in the top navigation bar.
    - Enter Title: *"Homemade Mango Pickle"*
-   - Select Category: *"Food"*
-   - Click **✨ AI Suggest**. Watch the deterministic fallback auto-fill a natural description.
+   - Select Category: *"Food & Tiffin"*
+   - Click **✨ AI Description Helper**. Watch `DeterministicFallback` auto-fill a description.
    - Enter Area: *"Pali Hill"*
    - Click **Create Listing**.
 6. **Verify Offline Persistence**: Refresh the browser (Ctrl+R / Cmd+R). The newly created listing persists across reloads via IndexedDB.
 7. **Neighborhood Pulse**: Click **📊 Pulse** in navigation to view community health score, category distribution bar chart, and AI service status.
-8. **Data Reset**: Go to **⚙️ Settings** → Click **🗑 Reset Data** in Danger Zone to delete all IndexedDB data and re-seed defaults.
+8. **Security & Data Reset**: Go to **⚙️ Settings** → Review **Security Posture** → Click **🗑 Reset Data** in Danger Zone to delete all IndexedDB storage and re-seed defaults.
 
 ---
 
@@ -77,7 +98,7 @@ mal-local/
 │   │   ├── Listing.js      # Listing domain model + validation & sanitization
 │   │   └── Neighborhood.js # Neighborhood value object
 │   ├── data/
-│   │   ├── categories.js   # Category metadata & icons
+│   │   ├── categories.js   # Category metadata & colors
 │   │   └── seedData.js     # 10 realistic Bandra West seed listings
 │   ├── storage/
 │   │   ├── IndexedDbAdapter.js   # Low-level IndexedDB wrapper
@@ -87,16 +108,17 @@ mal-local/
 │   │   ├── DeterministicFallback.js # Offline template generator
 │   │   └── LocalModelAdapter.js  # On-device browser model adapter
 │   ├── components/
-│   │   ├── Navigation.js         # Header with Blinkit/Swiggy location bar
-│   │   ├── ListingFeed.js        # Searchable feed with category pills
+│   │   ├── icons.js              # SVG icons helper (Blinkit icons)
+│   │   ├── Navigation.js         # Header with Blinkit logo & 8 MINS delivery pill
+│   │   ├── ListingFeed.js        # Searchable feed with category pills & Blinkit cards
 │   │   ├── ListingDetail.js      # Listing detail view & status manager
 │   │   ├── CreateListingForm.js  # Form with AI description helper & validation
-│   │   ├── NeighborhoodPulse.js  # Community activity stats & charts
-│   │   ├── Settings.js           # Theme toggle & Data Reset modal
+│   │   ├── NeighborhoodPulse.js  # Community activity stats & distribution chart
+│   │   ├── Settings.js           # Theme toggle, Security posture & Data Reset modal
 │   │   └── Toast.js              # Accessible notification system
 │   └── styles/
-│       ├── index.css       # Design tokens (Blinkit/Swiggy palette)
-│       └── components.css  # Component & layout styling
+│       ├── index.css       # Design tokens (Blinkit Yellow & Green palette)
+│       └── components.css  # Component & Blinkit card styling
 └── docs/
     ├── product-slice.md
     ├── success-metrics.md
@@ -104,7 +126,8 @@ mal-local/
     ├── security-baseline.md
     ├── local-ai-note.md
     └── adr/
-        └── 0001-local-first-marketplace-slice.md
+        ├── 0001-local-first-marketplace-slice.md
+        └── 0002-security-skeleton-stance.md
 ```
 
 ---
@@ -113,7 +136,7 @@ mal-local/
 
 - **Storage Boundary**: Business logic interacts strictly with `ListingRepository`. The underlying `IndexedDbAdapter` can be replaced with SQLite, CRDTs, or REST API without changing UI code.
 - **AI Boundary**: All AI operations are encapsulated inside `LocalAiService`. If browser on-device LLM is absent or user is offline, `DeterministicFallback` generates high-quality text templates. Zero hosted API keys required.
-- **Data Privacy**: No precise home addresses are collected; only general area names (e.g., *"Carter Road"*, *"Pali Hill"*).
+- **Security Boundary**: Follows **ADR 0002** ("The Walking Skeleton Has No Skin"). No secrets shipped in bundle, client treated as untrusted, data minimized, zero telemetry exfiltration.
 
 ---
 
@@ -127,6 +150,7 @@ mal-local/
 | **Security Baseline** | Secrets, data minimization & reset audit — [`docs/security-baseline.md`](docs/security-baseline.md) |
 | **Local AI Note** | AI architecture boundary & fallback strategy — [`docs/local-ai-note.md`](docs/local-ai-note.md) |
 | **ADR 0001** | Local-First Architecture Decision Record — [`docs/adr/0001-local-first-marketplace-slice.md`](docs/adr/0001-local-first-marketplace-slice.md) |
+| **ADR 0002 (Security)** | Security Skeleton Stance ("Walking Skeleton Has No Skin") — [`docs/adr/0002-security-skeleton-stance.md`](docs/adr/0002-security-skeleton-stance.md) |
 
 ---
 
