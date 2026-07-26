@@ -7,6 +7,7 @@ import '../../repository/listing_repository.dart';
 import '../theme/blinkit_theme.dart';
 import '../widgets/blinkit_header.dart';
 import '../widgets/category_scroll_bar.dart';
+import '../widgets/checkout_sheet.dart';
 import '../widgets/listing_card.dart';
 import 'create_screen.dart';
 import 'details_screen.dart';
@@ -36,6 +37,9 @@ class _FeedScreenState extends State<FeedScreen> {
   String _selectedCategory = 'all';
   ListingType? _selectedTypeFilter;
   String _searchQuery = '';
+
+  // Service Checkout Cart State
+  final Set<String> _cartListingIds = {};
 
   @override
   void initState() {
@@ -92,12 +96,48 @@ class _FeedScreenState extends State<FeedScreen> {
 
   int get _savedCount => _allListings.where((l) => l.status == ListingStatus.saved).length;
 
+  List<Listing> get _selectedCartListings =>
+      _allListings.where((l) => _cartListingIds.contains(l.id)).toList();
+
+  void _toggleCart(String listingId) {
+    setState(() {
+      if (_cartListingIds.contains(listingId)) {
+        _cartListingIds.remove(listingId);
+      } else {
+        _cartListingIds.add(listingId);
+      }
+    });
+  }
+
+  void _openCheckoutModal() {
+    if (_cartListingIds.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => CheckoutSheet(
+        selectedListings: _selectedCartListings,
+        userLocation: _userLocation,
+        onClearCart: () {
+          setState(() => _cartListingIds.clear());
+        },
+        onOrderConfirmed: () {
+          _loadListings();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Responsive columns (Matching Image 3 desktop grid vs mobile grid)
+    // Responsive grid columns & tight aspect ratio (Eliminates empty black space!)
     final crossAxisCount = screenWidth > 1100
         ? 5
         : screenWidth > 800
@@ -105,6 +145,9 @@ class _FeedScreenState extends State<FeedScreen> {
             : screenWidth > 550
                 ? 3
                 : 2;
+
+    // Compact card aspect ratio (0.85 on mobile, 0.90 on desktop -> No tall empty black space!)
+    final childAspectRatio = screenWidth > 800 ? 0.92 : 0.84;
 
     return Scaffold(
       appBar: BlinkitHeader(
@@ -134,7 +177,7 @@ class _FeedScreenState extends State<FeedScreen> {
               color: BlinkitTheme.blinkitGreen,
               child: CustomScrollView(
                 slivers: [
-                  // Category Chips & Filter Bar
+                  // Filter Pills Row
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -196,7 +239,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
                   const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-                  // Category Section Header (Matching Image 3: Category Title + "see all")
+                  // Category Section Header
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -205,7 +248,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         children: [
                           Text(
                             _selectedCategory == 'all'
-                                ? 'Nearby Items & Services in $_userLocation'
+                                ? 'Nearby Services & Items in $_userLocation'
                                 : '${ListingCategory.getById(_selectedCategory).icon} ${ListingCategory.getById(_selectedCategory).name}',
                             style: TextStyle(
                               fontFamily: 'Sora',
@@ -227,7 +270,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     ),
                   ),
 
-                  // Compact Product Grid (Matching Image 3 Blinkit reference grid)
+                  // Compact Grid (Reduced height childAspectRatio: 0.84 -> Zero empty black space!)
                   _filteredListings.isEmpty
                       ? SliverFillRemaining(
                           hasScrollBody: false,
@@ -259,15 +302,18 @@ class _FeedScreenState extends State<FeedScreen> {
                           sliver: SliverGrid(
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: crossAxisCount,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 0.68, // Compact vertical card ratio
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: childAspectRatio,
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final listing = _filteredListings[index];
+                                final isAdded = _cartListingIds.contains(listing.id);
                                 return ListingCard(
                                   listing: listing,
+                                  isAdded: isAdded,
+                                  onAddTap: () => _toggleCart(listing.id),
                                   onTap: () async {
                                     await Navigator.push(
                                       context,
@@ -288,38 +334,97 @@ class _FeedScreenState extends State<FeedScreen> {
                           ),
                         ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
               ),
             ),
-      // Prominent Floating Action Button "+ Post"
-      floatingActionButton: SizedBox(
-        width: 110,
-        height: 46,
-        child: FloatingActionButton.extended(
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CreateScreen(
-                  repository: widget.repository,
-                  aiService: widget.aiService,
+
+      // Persistent Blinkit Checkout Floating Bar when services are added!
+      bottomSheet: _cartListingIds.isNotEmpty
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: BlinkitTheme.blinkitGreen,
+                boxShadow: [
+                  BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, -2)),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${_cartListingIds.length} Service(s) Selected',
+                          style: const TextStyle(
+                            fontFamily: 'Sora',
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          '📍 $_userLocation • Free Checkout',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: BlinkitTheme.blinkitYellow,
+                        foregroundColor: const Color(0xFF0C831F),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      onPressed: _openCheckoutModal,
+                      icon: const Icon(Icons.shopping_cart_checkout, size: 18),
+                      label: const Text(
+                        'View Checkout Cart →',
+                        style: TextStyle(fontFamily: 'Sora', fontWeight: FontWeight.w900, fontSize: 13),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-            _loadListings();
-          },
-          icon: const Icon(Icons.add, fontWeight: FontWeight.bold, size: 18),
-          label: const Text(
-            '+ Post',
-            style: TextStyle(
-              fontFamily: 'Sora',
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
+            )
+          : null,
+
+      // Prominent Floating Action Button "+ Post"
+      floatingActionButton: _cartListingIds.isEmpty
+          ? SizedBox(
+              width: 110,
+              height: 46,
+              child: FloatingActionButton.extended(
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CreateScreen(
+                        repository: widget.repository,
+                        aiService: widget.aiService,
+                      ),
+                    ),
+                  );
+                  _loadListings();
+                },
+                icon: const Icon(Icons.add, fontWeight: FontWeight.bold, size: 18),
+                label: const Text(
+                  '+ Post',
+                  style: TextStyle(
+                    fontFamily: 'Sora',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 

@@ -6,11 +6,15 @@ import '../theme/blinkit_theme.dart';
 class ListingCard extends StatelessWidget {
   final Listing listing;
   final VoidCallback onTap;
+  final bool isAdded;
+  final VoidCallback onAddTap;
 
   const ListingCard({
     super.key,
     required this.listing,
     required this.onTap,
+    this.isAdded = false,
+    required this.onAddTap,
   });
 
   Color _getStatusColor(ListingStatus status) {
@@ -49,12 +53,13 @@ class ListingCard extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Image Thumbnail Container (Matching Image 3: Padded, centered BoxFit.contain, not stretched!)
               Container(
-                height: 110,
+                height: 100,
                 width: double.infinity,
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
@@ -66,18 +71,18 @@ class ListingCard extends StatelessWidget {
                           child: Image.network(
                             listing.imageUrl!,
                             fit: BoxFit.cover,
-                            height: 100,
+                            height: 92,
                             width: double.infinity,
-                            errorBuilder: (_, __, ___) => Text(cat.icon, style: const TextStyle(fontSize: 36)),
+                            errorBuilder: (_, __, ___) => Text(cat.icon, style: const TextStyle(fontSize: 32)),
                           ),
                         )
-                      : Text(cat.icon, style: const TextStyle(fontSize: 36)),
+                      : Text(cat.icon, style: const TextStyle(fontSize: 32)),
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              // Speed Badge (Matching Image 3: "⏱️ 8 MINS")
+              // Speed & Category Tags
               Row(
                 children: [
                   const Icon(Icons.timer_outlined, size: 10, color: Colors.grey),
@@ -91,7 +96,6 @@ class ListingCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  // Category Tag
                   Text(
                     '${cat.icon} ${cat.name}',
                     style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.grey),
@@ -101,7 +105,7 @@ class ListingCard extends StatelessWidget {
 
               const SizedBox(height: 4),
 
-              // Title (Matching Image 3: Bold, 12px)
+              // Title (Max 2 lines)
               Text(
                 listing.title,
                 maxLines: 2,
@@ -116,7 +120,7 @@ class ListingCard extends StatelessWidget {
 
               const SizedBox(height: 4),
 
-              // Area & Subtext (Matching Image 3: e.g. "32 pcs" / "📍 Pali Hill")
+              // Area & Subtext
               Text(
                 '📍 ${listing.area}',
                 style: TextStyle(
@@ -126,13 +130,13 @@ class ListingCard extends StatelessWidget {
                 ),
               ),
 
-              const Spacer(),
+              const SizedBox(height: 8),
 
-              // Bottom Action Bar (Matching Image 3: Status / Offer tag on left, Green ADD button on right)
+              // Bottom Action Bar (Status Pill on left, Green ADD / ADDED button on right)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Status Tag / Type Pill
+                  // Type Pill
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
@@ -149,22 +153,29 @@ class ListingCard extends StatelessWidget {
                     ),
                   ),
 
-                  // Green ADD Button (Matching Image 3: White button with green border and ADD text)
-                  Container(
-                    height: 26,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0C831F).withOpacity(0.15) : Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.2),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'ADD',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: BlinkitTheme.blinkitGreen,
+                  // Green ADD / ADDED Checkout Toggle Button
+                  InkWell(
+                    onTap: onAddTap,
+                    borderRadius: BorderRadius.circular(6),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      height: 26,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: isAdded
+                            ? BlinkitTheme.blinkitGreen
+                            : (isDark ? const Color(0xFF0C831F).withOpacity(0.15) : Colors.white),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: BlinkitTheme.blinkitGreen, width: 1.2),
+                      ),
+                      child: Center(
+                        child: Text(
+                          isAdded ? 'ADDED ✓' : 'ADD',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w900,
+                            color: isAdded ? Colors.white : BlinkitTheme.blinkitGreen,
+                          ),
                         ),
                       ),
                     ),

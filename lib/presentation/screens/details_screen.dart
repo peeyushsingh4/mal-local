@@ -295,6 +295,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       width: 170,
                       child: ListingCard(
                         listing: item,
+                        onAddTap: () {},
                         onTap: () {
                           Navigator.pushReplacement(
                             context,
